@@ -1,49 +1,139 @@
+import { useState } from "react";
+import ThemeToggle from "./ThemeToggle";
+import HipaaModal from "./HipaaModal";
+
 function AuthLayout({ onNavigate, children }) {
+  const [isHipaaOpen, setIsHipaaOpen] = useState(false);
+
   return (
-    <div className="grid min-h-svh overflow-hidden md:grid-cols-[minmax(320px,0.92fr)_minmax(440px,1.08fr)]">
-      <aside className="relative isolate flex min-h-[280px] flex-col justify-between overflow-hidden bg-care-green-900 p-6 text-[#f5fbf8] before:absolute before:-bottom-[120px] before:-right-[220px] before:z-[-1] before:h-[520px] before:w-[520px] before:rounded-full before:border before:border-[rgba(180,227,207,0.2)] before:content-[''] after:absolute after:-left-[150px] after:top-[30%] after:z-[-1] after:h-[260px] after:w-[260px] after:rounded-full after:border after:border-[rgba(180,227,207,0.2)] after:content-[''] md:min-h-0 md:p-[clamp(32px,5vw,72px)]">
-        <button
-          className="flex w-fit items-center gap-3 border-0 bg-transparent p-0 font-display text-[1.05rem] font-extrabold tracking-[-0.02em]"
-          type="button"
-          onClick={() => onNavigate("home")}
-          aria-label="Go to AbsoluteCare home"
-        >
-          <span
-            className="grid size-[34px] place-items-center rounded-[10px] bg-[#bce5d3] text-care-green-900"
-            aria-hidden="true"
+    <div className="flex min-h-svh flex-col justify-between bg-white text-care-ink transition-colors duration-200 dark:bg-care-night dark:text-care-night-ink">
+      {/* Top Navigation Bar */}
+      <header className="w-full border-b border-care-line/70 bg-white/95 backdrop-blur-md dark:border-care-night-line/80 dark:bg-care-night-panel/95">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <button
+            type="button"
+            onClick={() => onNavigate("home")}
+            className="group flex items-center gap-3 border-0 bg-transparent p-0 text-left font-display text-lg font-extrabold tracking-tight text-care-ink dark:text-care-night-ink"
+            aria-label="Return to AbsoluteCare homepage"
           >
-            <svg
-              className="size-5 fill-none stroke-current stroke-[2.4]"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+            <span className="grid size-9 place-items-center rounded-xl bg-care-green-700 text-lg font-bold text-white shadow-sm shadow-care-green-700/20 transition group-hover:bg-care-green-800 dark:bg-care-green-600">
+              <svg
+                className="size-5 fill-none stroke-current stroke-[2.5]"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </span>
+            <div className="flex flex-col">
+              <span className="leading-tight font-extrabold text-care-ink dark:text-care-night-ink">
+                AbsoluteCare
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-care-muted dark:text-care-night-muted">
+                Physical Therapy Scheduling
+              </span>
+            </div>
+          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsHipaaOpen(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-care-blue-700/20 bg-care-blue-50/70 px-3 py-1 text-xs font-semibold text-care-blue-700 transition hover:bg-care-blue-100/60 dark:border-care-blue-500/30 dark:bg-care-blue-900/30 dark:text-care-blue-100"
             >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
-          AbsoluteCare
-        </button>
-        <div className="my-auto max-w-[450px] pt-11 md:pt-0">
-          <p className="mb-3 text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[#a6d6c0] md:mb-5">
-            Physical therapy, made personal
-          </p>
-          <h1 className="mb-3 max-w-[440px] font-display text-[2.25rem] font-extrabold leading-[1.04] tracking-[-0.055em] md:mb-[22px] md:text-[clamp(2.3rem,4vw,4.1rem)]">
-            Move better. Feel stronger.
-          </h1>
-          <p className="max-w-[390px] text-[1.04rem] leading-[1.7] text-[#c4ddd3] max-md:hidden">
-            One simple place to connect with your care team, manage
-            appointments, and keep your recovery moving forward.
-          </p>
+              <svg
+                className="size-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden="true"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span>HIPAA Compliant</span>
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
-        <p className="text-[0.84rem] text-[#8fb9aa] max-md:hidden">
-          Trusted care, thoughtfully coordinated.
-        </p>
-      </aside>
+      </header>
+
+      {/* Main Centered Form Container */}
       <main
-        className="flex min-h-[calc(100svh-280px)] items-start justify-center bg-white px-6 py-[38px] md:min-h-0 md:items-center md:px-[clamp(24px,7vw,104px)] md:py-12"
+        className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:grid lg:grid-cols-[0.85fr_1fr] lg:gap-16 lg:px-10"
         aria-labelledby="auth-title"
       >
-        <div className="w-full max-w-[430px]">{children}</div>
+        <section
+          className="hidden lg:block"
+          aria-label="AbsoluteCare scheduling overview"
+        >
+          <div className="care-reveal max-w-md">
+            <div className="mb-8 flex items-center gap-3 text-sm font-semibold text-care-green-700 dark:text-care-green-100">
+              <span className="grid size-10 place-items-center rounded-xl bg-care-green-700 text-xl font-bold text-white shadow-lg shadow-care-green-700/20 dark:bg-care-green-600">
+                +
+              </span>
+              <span>Care that keeps moving</span>
+            </div>
+            <h1 className="font-display text-4xl font-extrabold leading-tight tracking-tight text-care-ink dark:text-care-night-ink xl:text-5xl">
+              Your next appointment is closer than it feels.
+            </h1>
+            <p className="mt-5 max-w-sm text-base leading-relaxed text-care-muted dark:text-care-night-muted">
+              AbsoluteCare keeps clinic calendars, patient bookings, and visit
+              details in one clear place.
+            </p>
+            <div className="care-grid-paper mt-10 rounded-2xl border border-care-line bg-white/80 p-5 shadow-sm dark:border-care-night-line dark:bg-care-night-panel/80">
+              <div className="flex items-center justify-between border-b border-care-line pb-4 text-xs font-semibold text-care-muted dark:border-care-night-line dark:text-care-night-muted">
+                <span>Thursday, October 12</span>
+                <span className="text-care-green-700 dark:text-care-green-100">
+                  4 visits
+                </span>
+              </div>
+              <div className="mt-4 space-y-3">
+                <div className="rounded-xl border border-care-green-700/20 bg-care-green-50 p-3 dark:border-care-green-600/30 dark:bg-care-green-900/30">
+                  <p className="text-xs font-bold text-care-green-800 dark:text-care-green-100">
+                    3:30 PM · Knee rehabilitation
+                  </p>
+                  <p className="mt-1 text-xs text-care-muted dark:text-care-night-muted">
+                    Alex Rivera · Confirmed
+                  </p>
+                </div>
+                <div className="rounded-xl border border-care-line bg-care-canvas p-3 dark:border-care-night-line dark:bg-care-night-card">
+                  <p className="text-xs font-bold text-care-ink dark:text-care-night-ink">
+                    5:00 PM · Initial evaluation
+                  </p>
+                  <p className="mt-1 text-xs text-care-muted dark:text-care-night-muted">
+                    New patient intake ready
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="care-card care-reveal w-full max-w-lg p-6 sm:p-10 transition-shadow">
+          {children}
+        </div>
       </main>
+
+      {/* Subdued Footer */}
+      <footer className="w-full border-t border-care-line/60 py-4 text-center text-xs text-care-muted dark:border-care-night-line/60 dark:text-care-night-muted">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 sm:flex-row">
+          <p>© {new Date().getFullYear()} AbsoluteCare. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setIsHipaaOpen(true)}
+              className="text-care-blue-700 underline decoration-1 underline-offset-2 hover:text-care-blue-800 dark:text-care-blue-500"
+            >
+              HIPAA Safeguard Agreement
+            </button>
+            <span>•</span>
+            <span>AES-256 Encrypted</span>
+          </div>
+        </div>
+      </footer>
+
+      <HipaaModal isOpen={isHipaaOpen} onClose={() => setIsHipaaOpen(false)} />
     </div>
   );
 }

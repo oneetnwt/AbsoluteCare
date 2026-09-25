@@ -1,49 +1,88 @@
-import { useState } from "react";
+import { useState } from 'react'
 
-function PasswordField({ id, label, value, onChange, error, autoComplete }) {
-  const [visible, setVisible] = useState(false);
+function PasswordField({
+  id,
+  label = 'Password',
+  value,
+  onChange,
+  error,
+  autoComplete = 'current-password',
+  placeholder = '••••••••',
+  showStrength = false,
+}) {
+  const [showPassword, setShowPassword] = useState(false)
+
+  const toggleVisibility = () => {
+    setShowPassword((prev) => !prev)
+  }
+
+  // Calculate password strength
+  const getStrength = (pwd) => {
+    if (!pwd) return { score: 0, label: '', color: '' }
+    let score = 0
+    if (pwd.length >= 8) score += 1
+    if (/[A-Z]/.test(pwd)) score += 1
+    if (/[0-9]/.test(pwd)) score += 1
+    if (/[^A-Za-z0-9]/.test(pwd)) score += 1
+
+    if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-care-error' }
+    if (score === 2 || score === 3) return { score: 2, label: 'Moderate', color: 'bg-amber-500' }
+    return { score: 3, label: 'Strong', color: 'bg-care-green-700' }
+  }
+
+  const strength = showStrength ? getStrength(value) : null
 
   return (
-    <div className="grid gap-[7px]">
-      <label className="text-[0.88rem] font-bold text-care-ink" htmlFor={id}>
-        {label}
-      </label>
+    <div className="grid gap-1.5">
+      <div className="flex items-center justify-between">
+        <label htmlFor={id} className="text-xs font-bold text-care-ink dark:text-care-night-ink">
+          {label}
+        </label>
+        {strength && strength.score > 0 && (
+          <span className="text-[11px] font-semibold text-care-muted dark:text-care-night-muted">
+            Strength: <span className="font-bold">{strength.label}</span>
+          </span>
+        )}
+      </div>
+
       <div className="relative">
         <input
-          className="w-full rounded-lg border border-care-line bg-[#fcfefd] px-3 py-2 pr-[54px] text-care-ink outline-none transition focus:border-care-blue-500 focus:ring-3 focus:ring-[rgba(67,143,189,0.18)] aria-[invalid=true]:border-care-error aria-[invalid=true]:bg-care-error-bg"
           id={id}
-          type={visible ? "text" : "password"}
+          type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={onChange}
           autoComplete={autoComplete}
+          placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
+          className="care-input pr-16"
         />
         <button
-          className="absolute right-3 top-1/2 -translate-y-1/2 border-0 bg-transparent p-[3px] text-care-blue-700 focus-visible:outline-3 focus-visible:outline-[rgba(67,143,189,0.45)] focus-visible:outline-offset-2"
           type="button"
-          onClick={() => setVisible(!visible)}
-          aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
+          onClick={toggleVisibility}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-care-muted hover:text-care-ink dark:text-care-night-muted dark:hover:text-care-night-ink"
+          aria-label={showPassword ? `Hide ${label}` : `Show ${label}`}
         >
-          {visible ? (
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 5.2A10.8 10.8 0 0 1 12 5c5 0 8.4 4.2 9.5 6.1a11.7 11.7 0 0 1-3.1 3.6M6.2 6.2C4.4 7.4 3.3 9 2.5 10.5 3.6 12.5 7 17 12 17c1.1 0 2.1-.2 3-.6" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z" />
-              <circle cx="12" cy="12" r="2.5" />
-            </svg>
-          )}
+          {showPassword ? 'Hide' : 'Show'}
         </button>
       </div>
+
+      {/* Password Strength Meter */}
+      {showStrength && value && (
+        <div className="mt-1 flex gap-1.5">
+          <div className={`h-1 flex-1 rounded-full transition-colors ${strength.score >= 1 ? strength.color : 'bg-care-line dark:bg-care-night-line'}`} />
+          <div className={`h-1 flex-1 rounded-full transition-colors ${strength.score >= 2 ? strength.color : 'bg-care-line dark:bg-care-night-line'}`} />
+          <div className={`h-1 flex-1 rounded-full transition-colors ${strength.score >= 3 ? strength.color : 'bg-care-line dark:bg-care-night-line'}`} />
+        </div>
+      )}
+
       {error && (
-        <p className="m-0 text-[0.78rem] text-care-error" id={`${id}-error`}>
+        <p id={`${id}-error`} className="m-0 text-xs font-semibold text-care-error">
           {error}
         </p>
       )}
     </div>
-  );
+  )
 }
 
-export default PasswordField;
+export default PasswordField

@@ -1,7 +1,7 @@
-import LoginForm from "../components/LoginForm";
+import LoginForm from '../components/LoginForm'
 
 function LoginPage({ onNavigate }) {
-  return <LoginForm onNavigate={onNavigate} />;
+  return <LoginForm onNavigate={onNavigate} />
 }
 
-export default LoginPage;
+export default LoginPage

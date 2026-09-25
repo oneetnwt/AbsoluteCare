@@ -2,13 +2,19 @@ import z from "zod";
 
 export const signupSchema = z
   .object({
-    firstname: z.string(),
-    lastname: z.string(),
-    email: z.email(),
-    password: z.string(),
+    firstname: z.string().min(1, "First name is required"),
+    lastname: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmpassword: z.string(),
+    role: z.enum(["user", "therapist", "admin", "secretary"]).optional().default("user"),
   })
   .refine((data) => data.password === data.confirmpassword, {
-    error: "Passwords do not match",
+    message: "Passwords do not match",
     path: ["confirmpassword"],
   });
+
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});

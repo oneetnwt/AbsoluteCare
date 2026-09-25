@@ -1,7 +1,9 @@
 import { useState } from "react";
+import PasswordField from "./PasswordField";
 import AuthDivider from "./AuthDivider";
 import GoogleAuthButton from "./GoogleAuthButton";
-import PasswordField from "./PasswordField";
+import axiosInstance from "../api/axiosInstance";
+import { setStoredUser } from "../auth/authStorage";
 
 function LoginForm({ onNavigate }) {
   const [form, setForm] = useState({
@@ -11,56 +13,92 @@ function LoginForm({ onNavigate }) {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("");
+  const [statusMessage, setStatusMessage] = useState({
+    text: "",
+    isError: false,
+  });
 
   const update = (field) => (event) => {
-    setForm({
-      ...form,
-      [field]:
-        event.target.type === "checkbox"
-          ? event.target.checked
-          : event.target.value,
-    });
+    const value =
+      event.target.type === "checkbox"
+        ? event.target.checked
+        : event.target.value;
+    setForm({ ...form, [field]: value });
     setErrors({ ...errors, [field]: "" });
-    setStatus("");
+    setStatusMessage({ text: "", isError: false });
   };
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
     const nextErrors = {};
-    if (!/^\S+@\S+\.\S+$/.test(form.email))
+    if (!/^\S+@\S+\.\S+$/.test(form.email)) {
       nextErrors.email = "Enter a valid email address.";
-    if (!form.password) nextErrors.password = "Enter your password.";
-    if (Object.keys(nextErrors).length) return setErrors(nextErrors);
+    }
+    if (!form.password) {
+      nextErrors.password = "Enter your password.";
+    }
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      return;
+    }
+
     setLoading(true);
-    window.setTimeout(() => {
+    setStatusMessage({ text: "", isError: false });
+
+    try {
+      const response = await axiosInstance.post("/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
+      if (!response.data.user) {
+        throw new Error("The login response did not include a user.");
+      }
+      setStoredUser(response.data.user);
       setLoading(false);
-      setStatus(
-        "Welcome back. This demo sign-in is ready for API integration.",
-      );
-    }, 700);
+      onNavigate("/dashboard");
+    } catch (err) {
+      setLoading(false);
+      if (err.response && err.response.data && err.response.data.message) {
+        setStatusMessage({ text: err.response.data.message, isError: true });
+      } else {
+        setStatusMessage({
+          text: "Unable to sign in right now. Check that the API is running and try again.",
+          isError: true,
+        });
+      }
+    }
   };
 
   return (
     <>
-      <div className="mb-7">
-        <p className="mb-5 text-[0.75rem] font-bold uppercase tracking-[0.14em] text-care-green-700">
-          Your care, connected
-        </p>
-        <h2
-          className="mb-[9px] font-display text-2xl font-bold leading-[1.12] tracking-[-0.045em] md:text-[2rem]"
+      <div className="mb-6">
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-care-blue-700/20 bg-care-blue-50/70 px-2.5 py-0.5 text-xs font-semibold text-care-blue-700 dark:border-care-blue-500/30 dark:bg-care-blue-900/30 dark:text-care-blue-100">
+          <span className="size-1.5 rounded-full bg-care-blue-500" />
+          Physical Therapy Portal
+        </div>
+        <h1
           id="auth-title"
+          className="font-display text-2xl font-bold tracking-tight text-care-ink dark:text-care-night-ink sm:text-3xl"
         >
-          Welcome back
-        </h2>
-        <p className="m-0 leading-[1.55] text-care-muted">
-          Log in to manage your appointments and recovery plan.
+          Sign in to your account
+        </h1>
+        <p className="mt-2 text-sm text-care-muted dark:text-care-night-muted">
+          Manage physical therapy appointments, rehabilitation plans, and
+          patient records.
         </p>
       </div>
-      <div className="grid gap-4.25">
-        <form className="grid gap-4.25" onSubmit={submit} noValidate>
-          <div className="grid gap-[7px]">
-            <label className="text-[0.88rem] font-bold" htmlFor="login-email">
+
+      <div className="space-y-4">
+        <GoogleAuthButton label="Sign in with Google Workspace" />
+        <AuthDivider />
+
+        <form onSubmit={submit} noValidate className="space-y-4">
+          <div className="grid gap-1.5">
+            <label
+              htmlFor="login-email"
+              className="text-xs font-bold text-care-ink dark:text-care-night-ink"
+            >
               Email address
             </label>
             <input
@@ -69,19 +107,21 @@ function LoginForm({ onNavigate }) {
               value={form.email}
               onChange={update("email")}
               autoComplete="email"
+              placeholder="therapist@clinic.com"
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? "login-email-error" : undefined}
-              className="min-h-[49px] w-full rounded-lg border border-care-line bg-[#fcfefd] px-3.5 py-3 text-care-ink outline-none transition focus:border-care-blue-500 focus:ring-3 focus:ring-[rgba(67,143,189,0.18)] aria-[invalid=true]:border-care-error aria-[invalid=true]:bg-care-error-bg"
+              className="care-input"
             />
             {errors.email && (
               <p
-                className="m-0 text-[0.78rem] text-care-error"
                 id="login-email-error"
+                className="m-0 text-xs font-semibold text-care-error"
               >
                 {errors.email}
               </p>
             )}
           </div>
+
           <PasswordField
             id="login-password"
             label="Password"
@@ -90,54 +130,60 @@ function LoginForm({ onNavigate }) {
             error={errors.password}
             autoComplete="current-password"
           />
-          <div className="-my-0.5 flex items-center justify-between gap-4">
-            <label className="flex items-center gap-2 text-[0.84rem] text-care-muted">
+
+          <div className="flex items-center justify-between gap-2 pt-1 text-xs">
+            <label className="flex items-center gap-2 font-medium text-care-muted dark:text-care-night-muted cursor-pointer">
               <input
-                className="size-4 accent-care-green-700"
                 type="checkbox"
                 checked={form.remember}
                 onChange={update("remember")}
-              />{" "}
-              Remember me
+                className="size-4 rounded accent-care-green-700"
+              />
+              <span>Remember me</span>
             </label>
             <button
-              className="border-0 bg-transparent p-0 font-bold text-care-green-700 underline decoration-1 underline-offset-4"
               type="button"
               onClick={() => onNavigate("forgot")}
+              className="font-semibold text-care-blue-700 underline decoration-1 underline-offset-4 hover:text-care-blue-800 dark:text-care-blue-500"
             >
               Forgot password?
             </button>
           </div>
+
           <button
-            className="min-h-[50px] rounded-lg border-0 bg-care-green-700 font-bold text-white transition hover:bg-care-green-800 disabled:cursor-wait disabled:opacity-65"
             type="submit"
             disabled={loading}
+            className="w-full rounded-xl border-0 bg-care-green-700 py-3 text-sm font-bold text-white shadow-sm shadow-care-green-700/25 transition-all hover:bg-care-green-800 active:scale-[0.99] disabled:opacity-60 dark:bg-care-green-600 dark:hover:bg-care-green-700"
           >
-            {loading ? "Logging in…" : "Log in"}
+            {loading ? "Verifying credentials…" : "Sign in to AbsoluteCare"}
           </button>
-          {status ?? (
-            <p
-              className="min-h-[1.2em] text-[0.84rem] text-care-green-800"
+
+          {statusMessage.text && (
+            <div
               role="status"
               aria-live="polite"
+              className={`rounded-xl p-3.5 text-xs font-semibold ${
+                statusMessage.isError
+                  ? "border border-care-error-border bg-care-error-bg text-care-error dark:bg-rose-950/30"
+                  : "border border-care-green-700/20 bg-care-green-50 text-care-green-800 dark:bg-care-green-900/30 dark:text-care-green-100"
+              }`}
             >
-              {status}
-            </p>
+              {statusMessage.text}
+            </div>
           )}
         </form>
-        <AuthDivider />
-        <GoogleAuthButton />
       </div>
-      <p className="mt-[26px] text-center text-[0.88rem] text-care-muted">
-        New to AbsoluteCare?{" "}
+
+      <div className="mt-8 border-t border-care-line pt-6 text-center text-xs text-care-muted dark:border-care-night-line dark:text-care-night-muted">
+        <span>New to AbsoluteCare? </span>
         <button
-          className="border-0 bg-transparent p-0 font-bold text-care-green-700 underline decoration-1 underline-offset-4"
           type="button"
           onClick={() => onNavigate("signup")}
+          className="font-bold text-care-blue-700 underline decoration-1 underline-offset-4 hover:text-care-blue-800 dark:text-care-blue-500"
         >
           Create an account
         </button>
-      </p>
+      </div>
     </>
   );
 }

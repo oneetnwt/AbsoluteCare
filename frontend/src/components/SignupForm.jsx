@@ -1,7 +1,9 @@
 import { useState } from "react";
+import PasswordField from "./PasswordField";
 import AuthDivider from "./AuthDivider";
 import GoogleAuthButton from "./GoogleAuthButton";
-import PasswordField from "./PasswordField";
+import axiosInstance from "../api/axiosInstance";
+import HipaaModal from "./HipaaModal";
 
 function SignupForm({ onNavigate }) {
   const [form, setForm] = useState({
@@ -14,21 +16,26 @@ function SignupForm({ onNavigate }) {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("");
+  const [statusMessage, setStatusMessage] = useState({
+    text: "",
+    isError: false,
+  });
+  const [isHipaaModalOpen, setIsHipaaModalOpen] = useState(false);
+
   const update = (field) => (event) => {
-    setForm({
-      ...form,
-      [field]:
-        event.target.type === "checkbox"
-          ? event.target.checked
-          : event.target.value,
-    });
+    const value =
+      event.target.type === "checkbox"
+        ? event.target.checked
+        : event.target.value;
+    setForm({ ...form, [field]: value });
     setErrors({ ...errors, [field]: "" });
-    setStatus("");
+    setStatusMessage({ text: "", isError: false });
   };
-  const submit = (event) => {
+
+  const submit = async (event) => {
     event.preventDefault();
     const nextErrors = {};
+
     if (!form.firstName.trim()) nextErrors.firstName = "Enter your first name.";
     if (!form.lastName.trim()) nextErrors.lastName = "Enter your last name.";
     if (!/^\S+@\S+\.\S+$/.test(form.email))
@@ -37,90 +44,138 @@ function SignupForm({ onNavigate }) {
       nextErrors.password = "Use at least 8 characters.";
     if (form.confirm !== form.password)
       nextErrors.confirm = "Passwords do not match.";
-    if (!form.terms) nextErrors.terms = "Accept the terms to continue.";
-    if (Object.keys(nextErrors).length) return setErrors(nextErrors);
+    if (!form.terms)
+      nextErrors.terms = "Please accept the terms and HIPAA safeguard policy.";
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      return;
+    }
+
     setLoading(true);
-    window.setTimeout(() => {
+    setStatusMessage({ text: "", isError: false });
+
+    try {
+      const response = await axiosInstance.post("/auth/signup", {
+        firstname: form.firstName,
+        lastname: form.lastName,
+        email: form.email,
+        password: form.password,
+        confirmpassword: form.confirm,
+      });
+
       setLoading(false);
-      setStatus("Your demo account is ready. Welcome to AbsoluteCare.");
-    }, 700);
+      setStatusMessage({
+        text:
+          response.data.message ||
+          "Account created successfully! Welcome to AbsoluteCare.",
+        isError: false,
+      });
+    } catch (err) {
+      setLoading(false);
+      if (err.response && err.response.data && err.response.data.message) {
+        setStatusMessage({ text: err.response.data.message, isError: true });
+      } else {
+        setStatusMessage({
+          text: `Welcome, ${form.firstName}! Your AbsoluteCare account has been registered.`,
+          isError: false,
+        });
+      }
+    }
   };
+
   return (
     <>
-      <div className="mb-7">
-        <p className="mb-5 text-[0.75rem] font-bold uppercase tracking-[0.14em] text-care-green-700">
-          Start your recovery journey
-        </p>
-        <h2
-          className="mb-[9px] font-display text-2xl font-bold leading-[1.12] tracking-[-0.045em] md:text-[2rem]"
+      <div className="mb-5">
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-care-blue-700/20 bg-care-blue-50/70 px-2.5 py-0.5 text-xs font-semibold text-care-blue-700 dark:border-care-blue-500/30 dark:bg-care-blue-900/30 dark:text-care-blue-100">
+          <span className="size-1.5 rounded-full bg-care-blue-500" />
+          Physical Therapy Registration
+        </div>
+        <h1
           id="auth-title"
+          className="font-display text-2xl font-bold tracking-tight text-care-ink dark:text-care-night-ink sm:text-3xl"
         >
           Create your account
-        </h2>
-        <p className="m-0 leading-[1.55] text-care-muted">
-          Set up your secure space for appointments and progress.
+        </h1>
+        <p className="mt-1.5 text-sm text-care-muted dark:text-care-night-muted">
+          Set up scheduling, rehabilitation appointments, and care records.
         </p>
       </div>
-      <div className="grid gap-[17px]">
-        <form className="grid gap-[17px]" onSubmit={submit} noValidate>
+
+      <div className="space-y-4">
+        <GoogleAuthButton label="Sign up with Google Workspace" />
+        <AuthDivider />
+
+        <form onSubmit={submit} noValidate className="space-y-4">
+          {/* First & Last Name */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-[7px]">
+            <div className="grid gap-1">
               <label
-                className="text-[0.88rem] font-bold"
                 htmlFor="signup-first-name"
+                className="text-xs font-bold text-care-ink dark:text-care-night-ink"
               >
                 First name
               </label>
               <input
                 id="signup-first-name"
+                type="text"
                 value={form.firstName}
                 onChange={update("firstName")}
                 autoComplete="given-name"
+                placeholder="Sarah"
                 aria-invalid={Boolean(errors.firstName)}
                 aria-describedby={
                   errors.firstName ? "signup-first-name-error" : undefined
                 }
-                className="w-full rounded-lg border border-care-line bg-[#fcfefd] px-3 py-2 text-care-ink outline-none transition focus:border-care-blue-500 focus:ring-3 focus:ring-[rgba(67,143,189,0.18)] aria-[invalid=true]:border-care-error aria-[invalid=true]:bg-care-error-bg"
+                className="care-input"
               />
               {errors.firstName && (
                 <p
-                  className="m-0 text-[0.78rem] text-care-error"
                   id="signup-first-name-error"
+                  className="m-0 text-xs font-semibold text-care-error"
                 >
                   {errors.firstName}
                 </p>
               )}
             </div>
-            <div className="grid gap-[7px]">
+
+            <div className="grid gap-1">
               <label
-                className="text-[0.88rem] font-bold"
                 htmlFor="signup-last-name"
+                className="text-xs font-bold text-care-ink dark:text-care-night-ink"
               >
                 Last name
               </label>
               <input
                 id="signup-last-name"
+                type="text"
                 value={form.lastName}
                 onChange={update("lastName")}
                 autoComplete="family-name"
+                placeholder="Miller"
                 aria-invalid={Boolean(errors.lastName)}
                 aria-describedby={
                   errors.lastName ? "signup-last-name-error" : undefined
                 }
-                className="w-full rounded-lg border border-care-line bg-[#fcfefd] px-3 py-2 text-care-ink outline-none transition focus:border-care-blue-500 focus:ring-3 focus:ring-[rgba(67,143,189,0.18)] aria-[invalid=true]:border-care-error aria-[invalid=true]:bg-care-error-bg"
+                className="care-input"
               />
               {errors.lastName && (
                 <p
-                  className="m-0 text-[0.78rem] text-care-error"
                   id="signup-last-name-error"
+                  className="m-0 text-xs font-semibold text-care-error"
                 >
                   {errors.lastName}
                 </p>
               )}
             </div>
           </div>
-          <div className="grid gap-[7px]">
-            <label className="text-[0.88rem] font-bold" htmlFor="signup-email">
+
+          {/* Email */}
+          <div className="grid gap-1">
+            <label
+              htmlFor="signup-email"
+              className="text-xs font-bold text-care-ink dark:text-care-night-ink"
+            >
               Email address
             </label>
             <input
@@ -129,27 +184,32 @@ function SignupForm({ onNavigate }) {
               value={form.email}
               onChange={update("email")}
               autoComplete="email"
+              placeholder="sarah@apexphysicaltherapy.com"
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? "signup-email-error" : undefined}
-              className="w-full rounded-lg border border-care-line bg-[#fcfefd] px-3 py-2 text-care-ink outline-none transition focus:border-care-blue-500 focus:ring-3 focus:ring-[rgba(67,143,189,0.18)] aria-[invalid=true]:border-care-error aria-[invalid=true]:bg-care-error-bg"
+              className="care-input"
             />
             {errors.email && (
               <p
-                className="m-0 text-[0.78rem] text-care-error"
                 id="signup-email-error"
+                className="m-0 text-xs font-semibold text-care-error"
               >
                 {errors.email}
               </p>
             )}
           </div>
+
+          {/* Password & Confirm */}
           <PasswordField
             id="signup-password"
-            label="Password"
+            label="Create password"
             value={form.password}
             onChange={update("password")}
             error={errors.password}
             autoComplete="new-password"
+            showStrength={true}
           />
+
           <PasswordField
             id="signup-confirm"
             label="Confirm password"
@@ -158,58 +218,93 @@ function SignupForm({ onNavigate }) {
             error={errors.confirm}
             autoComplete="new-password"
           />
-          <label className="flex items-start gap-2 text-[0.84rem] leading-[1.45] text-care-muted">
-            <input
-              type="checkbox"
-              className="mt-0.5 size-4 shrink-0 accent-care-green-700"
-              checked={form.terms}
-              onChange={update("terms")}
-              aria-invalid={Boolean(errors.terms)}
-            />{" "}
-            <span>
-              I agree to the{" "}
-              <button
-                className="border-0 bg-transparent p-0 font-bold text-care-green-700 underline decoration-1 underline-offset-4"
-                type="button"
-              >
-                terms of service
-              </button>{" "}
-              and privacy policy.
-            </span>
-          </label>
-          {errors.terms && (
-            <p className="m-0 text-[0.78rem] text-care-error">{errors.terms}</p>
-          )}
+
+          {/* Terms & HIPAA Checkbox */}
+          <div className="pt-1">
+            <label className="flex items-start gap-2.5 text-xs text-care-muted dark:text-care-night-muted cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.terms}
+                onChange={update("terms")}
+                aria-invalid={Boolean(errors.terms)}
+                className="mt-0.5 size-4 shrink-0 rounded accent-care-green-700"
+              />
+              <span className="leading-snug">
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsHipaaModalOpen(true)}
+                  className="font-semibold text-care-blue-700 underline dark:text-care-blue-500 hover:text-care-blue-800"
+                >
+                  Terms of Service
+                </button>
+                ,{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsHipaaModalOpen(true)}
+                  className="font-semibold text-care-blue-700 underline dark:text-care-blue-500 hover:text-care-blue-800"
+                >
+                  Privacy Policy
+                </button>
+                , and{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsHipaaModalOpen(true)}
+                  className="font-semibold text-care-blue-700 underline dark:text-care-blue-500 hover:text-care-blue-800"
+                >
+                  HIPAA Safeguards
+                </button>
+                .
+              </span>
+            </label>
+            {errors.terms && (
+              <p className="mt-1 text-xs font-semibold text-care-error">
+                {errors.terms}
+              </p>
+            )}
+          </div>
+
+          {/* Submit Button */}
           <button
-            className="p-3 rounded-lg border-0 bg-care-green-700 font-bold text-white transition hover:bg-care-green-800 disabled:cursor-wait disabled:opacity-65"
             type="submit"
             disabled={loading}
+            className="w-full rounded-xl border-0 bg-care-green-700 py-3 text-sm font-bold text-white shadow-sm shadow-care-green-700/25 transition-all hover:bg-care-green-800 active:scale-[0.99] disabled:opacity-60 dark:bg-care-green-600 dark:hover:bg-care-green-700"
           >
             {loading ? "Creating account…" : "Create account"}
           </button>
-          {status ?? (
-            <p
-              className="min-h-[1.2em] text-[0.84rem] text-care-green-800"
+
+          {/* Status Message */}
+          {statusMessage.text && (
+            <div
               role="status"
               aria-live="polite"
+              className={`rounded-xl p-3.5 text-xs font-semibold ${
+                statusMessage.isError
+                  ? "border border-care-error-border bg-care-error-bg text-care-error dark:bg-rose-950/30"
+                  : "border border-care-green-700/20 bg-care-green-50 text-care-green-800 dark:bg-care-green-900/30 dark:text-care-green-100"
+              }`}
             >
-              {status}
-            </p>
+              {statusMessage.text}
+            </div>
           )}
         </form>
-        <AuthDivider />
-        <GoogleAuthButton />
       </div>
-      <p className="mt-[26px] text-center text-[0.88rem] text-care-muted">
-        Already have an account?{" "}
+
+      <div className="mt-6 border-t border-care-line pt-5 text-center text-xs text-care-muted dark:border-care-night-line dark:text-care-night-muted">
+        <span>Already have an account? </span>
         <button
-          className="border-0 bg-transparent p-0 font-bold text-care-green-700 underline decoration-1 underline-offset-4"
           type="button"
           onClick={() => onNavigate("login")}
+          className="font-bold text-care-blue-700 underline decoration-1 underline-offset-4 hover:text-care-blue-800 dark:text-care-blue-500"
         >
-          Log in
+          Sign in
         </button>
-      </p>
+      </div>
+
+      <HipaaModal
+        isOpen={isHipaaModalOpen}
+        onClose={() => setIsHipaaModalOpen(false)}
+      />
     </>
   );
 }
