@@ -11,6 +11,7 @@ import {
   JWT_SECRET,
   RECAPTCHA_SECRET_KEY,
 } from "../config/env.js";
+import { generateToken } from "../utils/jwt.js";
 
 const googleScopes = "openid email profile";
 
@@ -183,11 +184,9 @@ export async function completeGoogleSignup(req, res) {
     }
     const password = String(req.body.password || "");
     if (password.length < 8 || password !== req.body.confirmPassword) {
-      return res
-        .status(400)
-        .json({
-          message: "Passwords must match and be at least 8 characters.",
-        });
+      return res.status(400).json({
+        message: "Passwords must match and be at least 8 characters.",
+      });
     }
     if (!req.body.terms) {
       return res
@@ -201,11 +200,9 @@ export async function completeGoogleSignup(req, res) {
     }
     const existingUser = await User.findOne({ email: payload.email });
     if (existingUser) {
-      return res
-        .status(409)
-        .json({
-          message: "An account with this email address already exists.",
-        });
+      return res.status(409).json({
+        message: "An account with this email address already exists.",
+      });
     }
     const hashedPassword = await bcrypt.hash(
       password,
@@ -303,6 +300,8 @@ export const login = async (req, res) => {
       });
     }
 
+    generateToken(user._id.toString(), res);
+
     return res.status(200).json({
       message: "Login successful.",
       user: user.omitPassword(),
@@ -318,4 +317,9 @@ export const login = async (req, res) => {
       message: error.message || "Internal server error.",
     });
   }
+};
+
+export const checkAuth = async (req, res) => {
+  const user = req.user;
+  res.status(200).json(user);
 };

@@ -25,4 +25,4 @@ export const GOOGLE_REDIRECT_URI = getEnv(
   "http://localhost:5000/auth/google/callback",
 );
 export const FRONTEND_URL = getEnv("FRONTEND_URL", "http://localhost:5173");
-export const JWT_SECRET = getEnv("JWT_SECRET", "");
+export const JWT_SECRET = getEnv("JWT_SECRET", "absolutecare-secret-key");
