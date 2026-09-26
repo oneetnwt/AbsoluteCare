@@ -1,11 +1,14 @@
-function GoogleAuthButton({ label = 'Continue with Google' }) {
+function GoogleAuthButton({ label = "Continue with Google" }) {
+  const startGoogleAuth = () => {
+    const apiBaseUrl = import.meta.env.VITE_API_URL || "";
+    window.location.assign(`${apiBaseUrl}/auth/google`);
+  };
+
   return (
     <button
-      className="flex w-full min-h-[46px] items-center justify-center gap-2.5 rounded-xl border border-care-line bg-white/80 py-2.5 px-4 text-xs font-bold text-care-ink transition hover:border-care-blue-500 hover:bg-white dark:border-care-night-line dark:bg-care-night-card dark:text-care-night-ink shadow-sm"
+      className="flex w-full min-h-11.5 items-center justify-center gap-2.5 rounded-xl border border-care-line bg-white/80 py-2.5 px-4 text-xs font-bold text-care-ink transition hover:border-care-blue-500 hover:bg-white dark:border-care-night-line dark:bg-care-night-card dark:text-care-night-ink shadow-sm"
       type="button"
-      onClick={() => {
-        alert('Google Workspace OAuth configured for HIPAA-compliant Single Sign-On.')
-      }}
+      onClick={startGoogleAuth}
     >
       <svg className="size-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
         <path
@@ -27,7 +30,7 @@ function GoogleAuthButton({ label = 'Continue with Google' }) {
       </svg>
       {label}
     </button>
-  )
+  );
 }
 
-export default GoogleAuthButton
+export default GoogleAuthButton;

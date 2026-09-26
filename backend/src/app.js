@@ -1,5 +1,6 @@
 import express from "express";
 import { PORT } from "./config/env.js";
+import cors from "cors";
 
 import authRoutes from "./router/authRoutes.js";
 import connectDB from "./config/db.js";
@@ -7,6 +8,7 @@ import connectDB from "./config/db.js";
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 app.use("/auth", authRoutes);
 

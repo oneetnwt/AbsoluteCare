@@ -99,7 +99,7 @@ function Footer({ onNavigate, onOpenHipaa }) {
                   onClick={() => onNavigate("login")}
                   className="text-left font-semibold text-care-green-700 hover:underline dark:text-care-green-100"
                 >
-                  Therapist portal login
+                  Sign in
                 </button>
               </li>
               <li>
@@ -108,7 +108,7 @@ function Footer({ onNavigate, onOpenHipaa }) {
                   onClick={() => onNavigate("login")}
                   className="text-left transition hover:text-care-green-700 dark:hover:text-care-green-100"
                 >
-                  Patient portal login
+                  Sign in to scheduling
                 </button>
               </li>
               <li>
@@ -117,7 +117,7 @@ function Footer({ onNavigate, onOpenHipaa }) {
                   onClick={() => onNavigate("signup")}
                   className="text-left font-bold text-care-green-700 dark:text-care-green-100 hover:underline"
                 >
-                  Create a clinic account
+                  Create account
                 </button>
               </li>
             </ul>

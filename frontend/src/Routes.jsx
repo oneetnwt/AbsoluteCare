@@ -10,8 +10,10 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
-import PortalLogin from "./components/PortalLogin";
+import GoogleAccountSetupPage from "./pages/GoogleAccountSetupPage";
+import GoogleAuthCallbackPage from "./pages/GoogleAuthCallbackPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ToastProvider } from "./context/ToastContext.jsx";
 import { isAuthenticated } from "./auth/authStorage";
 
 const pagePaths = {
@@ -73,20 +75,16 @@ function Routes() {
       ),
     },
     {
+      path: "/auth/callback",
+      element: <RoutedPage Page={GoogleAuthCallbackPage} withAuthLayout />,
+    },
+    {
+      path: "/google/setup",
+      element: <RoutedPage Page={GoogleAccountSetupPage} withAuthLayout />,
+    },
+    {
       path: "/dashboard",
       element: <ProtectedRoute />,
-    },
-    {
-      path: "/login/:role",
-      element: (
-        <PublicOnlyRoute>
-          <RoleLoginRoute />
-        </PublicOnlyRoute>
-      ),
-    },
-    {
-      path: "/portal/:role",
-      element: <Navigate to="/dashboard" replace />,
     },
     {
       path: "*",
@@ -100,15 +98,11 @@ function Routes() {
 
   return (
     <ThemeProvider>
-      <RouterProvider router={routes} />
+      <ToastProvider>
+        <RouterProvider router={routes} />
+      </ToastProvider>
     </ThemeProvider>
   );
-}
-
-function RoleLoginRoute() {
-  const navigate = useNavigate();
-  const role = window.location.pathname.split("/")[2];
-  return <PortalLogin role={role} onNavigate={(path) => navigate(path)} />;
 }
 
 export default Routes;

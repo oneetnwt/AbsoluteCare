@@ -6,9 +6,9 @@ function AuthLayout({ onNavigate, children }) {
   const [isHipaaOpen, setIsHipaaOpen] = useState(false);
 
   return (
-    <div className="flex min-h-svh flex-col justify-between bg-white text-care-ink transition-colors duration-200 dark:bg-care-night dark:text-care-night-ink">
+    <div className="care-grid-paper flex min-h-svh flex-col justify-between bg-care-canvas text-care-ink transition-colors duration-200 dark:bg-care-night dark:text-care-night-ink">
       {/* Top Navigation Bar */}
-      <header className="w-full border-b border-care-line/70 bg-white/95 backdrop-blur-md dark:border-care-night-line/80 dark:bg-care-night-panel/95">
+      <header className="w-full border-b border-care-line/70 bg-care-canvas/95 backdrop-blur-md dark:border-care-night-line/80 dark:bg-care-night-panel/95">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <button
             type="button"
@@ -30,7 +30,7 @@ function AuthLayout({ onNavigate, children }) {
                 AbsoluteCare
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-care-muted dark:text-care-night-muted">
-                Physical Therapy Scheduling
+                Appointment Scheduling
               </span>
             </div>
           </button>
@@ -60,7 +60,7 @@ function AuthLayout({ onNavigate, children }) {
 
       {/* Main Centered Form Container */}
       <main
-        className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:grid lg:grid-cols-[0.85fr_1fr] lg:gap-16 lg:px-10"
+        className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:grid lg:grid-cols-[0.9fr_1fr] lg:gap-20 lg:px-10"
         aria-labelledby="auth-title"
       >
         <section
@@ -72,14 +72,14 @@ function AuthLayout({ onNavigate, children }) {
               <span className="grid size-10 place-items-center rounded-xl bg-care-green-700 text-xl font-bold text-white shadow-lg shadow-care-green-700/20 dark:bg-care-green-600">
                 +
               </span>
-              <span>Care that keeps moving</span>
+              <span>Keep every appointment on track</span>
             </div>
             <h1 className="font-display text-4xl font-extrabold leading-tight tracking-tight text-care-ink dark:text-care-night-ink xl:text-5xl">
-              Your next appointment is closer than it feels.
+              Scheduling that keeps every visit on track.
             </h1>
             <p className="mt-5 max-w-sm text-base leading-relaxed text-care-muted dark:text-care-night-muted">
-              AbsoluteCare keeps clinic calendars, patient bookings, and visit
-              details in one clear place.
+              AbsoluteCare keeps appointments, patient details, and visit
+              reminders clear from booking through follow-up.
             </p>
             <div className="care-grid-paper mt-10 rounded-2xl border border-care-line bg-white/80 p-5 shadow-sm dark:border-care-night-line dark:bg-care-night-panel/80">
               <div className="flex items-center justify-between border-b border-care-line pb-4 text-xs font-semibold text-care-muted dark:border-care-night-line dark:text-care-night-muted">
@@ -110,7 +110,7 @@ function AuthLayout({ onNavigate, children }) {
           </div>
         </section>
 
-        <div className="care-card care-reveal w-full max-w-lg p-6 sm:p-10 transition-shadow">
+        <div className="care-card care-reveal w-full max-w-lg p-6 shadow-xl sm:p-10">
           {children}
         </div>
       </main>

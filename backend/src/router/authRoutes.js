@@ -1,9 +1,20 @@
 import { Router } from "express";
-import { signup, login } from "../controller/authController.js";
+import {
+  completeGoogleSignup,
+  googleCallback,
+  googleSession,
+  googleStart,
+  signup,
+  login,
+} from "../controller/authController.js";
 
 const router = Router();
 
 router.post("/signup", signup);
 router.post("/login", login);
+router.get("/google", googleStart);
+router.get("/google/callback", googleCallback);
+router.get("/google/session", googleSession);
+router.post("/google/complete", completeGoogleSignup);
 
 export default router;

@@ -1,202 +1,166 @@
 import { useState } from "react";
+import {
+  BellRing,
+  CalendarClock,
+  Check,
+  ClipboardCheck,
+  FileText,
+  LockKeyhole,
+  MessageSquareText,
+  NotebookPen,
+  ShieldCheck,
+  UsersRound,
+} from "lucide-react";
 
 const features = [
   {
-    id: "booking",
-    icon: "🗓️",
-    title: "Easy self-serve booking",
-    tagline: "Keep the front desk moving",
+    id: "schedule",
+    icon: CalendarClock,
+    title: "A schedule people can trust",
     description:
-      "Give patients a live view of availability and let them choose the right visit without a phone call. Set appointment lengths, buffers, and clinic hours once.",
-    highlights: [
-      "Real-time calendar sync",
-      "Custom treatment buffers",
-      "Patient self-scheduling",
-      "Timezone auto-conversion",
+      "Set clinic hours, treatment buffers, and availability once. Patients see the right options without a call to the front desk.",
+    points: [
+      "Self-serve booking",
+      "Calendar-aware availability",
+      "Reschedule controls",
     ],
-    preview: {
-      type: "booking",
-      title: "Therapist schedule buffer",
-      detail: "50-minute treatment + 10-minute documentation buffer",
-    },
   },
   {
-    id: "messaging",
-    icon: "🔐",
-    title: "Secure patient updates",
-    tagline: "Keep recovery plans in context",
+    id: "intake",
+    icon: ClipboardCheck,
+    title: "Ready before the visit",
     description:
-      "Share appointment details, home exercise reminders, and care instructions in a protected channel that keeps sensitive information out of ordinary email.",
-    highlights: [
-      "Protected care messages",
-      "Intake file sharing",
-      "Read receipts & status",
-      "No PHI in email",
+      "Collect the details your team needs before the patient arrives, so the appointment starts with context instead of paperwork.",
+    points: [
+      "Digital intake forms",
+      "Insurance and consent capture",
+      "Private patient records",
     ],
-    preview: {
-      type: "messaging",
-      title: "Encrypted Care Conversation",
-      detail: "Protected Health Information (PHI) encrypted end-to-end",
-    },
   },
   {
-    id: "reminders",
-    icon: "🔔",
-    title: "Helpful appointment reminders",
-    tagline: "Make every visit easier to keep",
+    id: "follow-up",
+    icon: BellRing,
+    title: "Follow-up that stays human",
     description:
-      "Send clear SMS and email reminders before each visit. Patients can confirm or request a new time in one tap, while your team keeps the schedule accurate.",
-    highlights: [
-      "SMS and email templates",
-      "One-tap confirmation",
-      "Reschedule policy controls",
-      "Time-zone aware timing",
-    ],
-    preview: {
-      type: "reminders",
-      title: "Automated SMS Nudge",
-      detail:
-        "“Hi Alex, your physical therapy visit is tomorrow at 3:30 PM. Reply 1 to confirm.”",
-    },
-  },
-  {
-    id: "insurance",
-    icon: "📋",
-    title: "Ready-to-go intake",
-    tagline: "Start treatment with context",
-    description:
-      "Collect insurance details, medical history, and consent forms before the first visit so your therapist can spend more time assessing movement and less time on paperwork.",
-    highlights: [
-      "Insurance card capture",
-      "Custom intake forms",
-      "Digital consent signatures",
-      "Medical history intake",
-    ],
-    preview: {
-      type: "insurance",
-      title: "Pre-Session Intake Status",
-      detail: "Consent Form ✓ | Insurance Card Uploaded ✓ | Medical History ✓",
-    },
-  },
-  {
-    id: "telehealth",
-    icon: "🎥",
-    title: "Progress notes in flow",
-    tagline: "Capture the work while it is fresh",
-    description:
-      "Open each visit with the relevant patient context and finish with structured treatment notes, goals, and next steps in the same workspace.",
-    highlights: [
-      "Treatment note templates",
-      "Goal tracking",
-      "Session duration tracker",
-      "Private clinician workspace",
-    ],
-    preview: {
-      type: "telehealth",
-      title: "Encrypted Telehealth Room",
-      detail: "No software download needed • Secure Peer-to-Peer Video",
-    },
+      "Keep reminders, confirmations, home instructions, and next steps in a clear flow that respects the relationship.",
+    points: ["Helpful reminders", "Protected care updates", "Clear next steps"],
   },
 ];
 
 function FeaturesSection() {
-  const [activeFeatureId, setActiveFeatureId] = useState("booking");
+  const [activeId, setActiveId] = useState("schedule");
   const activeFeature =
-    features.find((f) => f.id === activeFeatureId) || features[0];
+    features.find((feature) => feature.id === activeId) || features[0];
+  const ActiveIcon = activeFeature.icon;
 
   return (
-    <section id="features" className="py-20 lg:py-28">
+    <section
+      id="features"
+      className="bg-white py-20 dark:bg-care-night lg:py-28"
+    >
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
-        <div className="text-center max-w-3xl mx-auto">
-          <span className="text-xs font-bold uppercase tracking-wider text-care-green-700 dark:text-care-green-100">
-            Everything In One Thoughtful Place
-          </span>
-          <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-care-ink dark:text-care-night-ink sm:text-4xl lg:text-5xl">
-            The practical side of care, made lighter.
-          </h2>
-          <p className="mt-4 text-lg text-care-muted dark:text-care-night-muted">
-            One calm system for the people who schedule care and the people who
-            receive it.
-          </p>
-        </div>
-
-        {/* Feature Navigation Tabs */}
-        <div className="mt-12 flex items-center justify-start gap-2 overflow-x-auto pb-4 pt-1 sm:justify-center">
-          {features.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setActiveFeatureId(f.id)}
-              className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition ${
-                activeFeatureId === f.id
-                  ? "bg-care-green-700 text-white shadow-md dark:bg-care-green-600"
-                  : "border border-care-line bg-white/70 text-care-muted hover:border-care-green-700 hover:text-care-ink dark:border-care-night-line dark:bg-care-night-panel dark:text-care-night-muted dark:hover:text-care-night-ink"
-              }`}
-            >
-              <span>{f.icon}</span>
-              <span>{f.title}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Active Feature Display Card */}
-        <div className="mt-8 rounded-3xl border border-care-line bg-white p-8 shadow-xl dark:border-care-night-line dark:bg-care-night-panel lg:p-12">
-          <div className="grid items-center gap-10 lg:grid-cols-12">
-            {/* Feature Info */}
-            <div className="lg:col-span-6">
-              <span className="text-xs font-bold uppercase tracking-wider text-care-blue-700 dark:text-care-blue-500">
-                {activeFeature.tagline}
-              </span>
-              <h3 className="mt-2 font-display text-3xl font-bold text-care-ink dark:text-care-night-ink">
-                {activeFeature.title}
-              </h3>
-              <p className="mt-4 text-base leading-relaxed text-care-muted dark:text-care-night-muted">
-                {activeFeature.description}
-              </p>
-
-              <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {activeFeature.highlights.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-2.5 text-sm font-semibold text-care-ink dark:text-care-night-ink"
-                  >
-                    <span className="grid size-5 place-items-center rounded-full bg-care-green-100 text-xs font-bold text-care-green-700 dark:bg-care-green-900 dark:text-care-green-100">
-                      ✓
-                    </span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+        <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:gap-20">
+          <div className="max-w-md">
+            <p className="text-sm font-bold text-care-green-700 dark:text-care-green-100">
+              The work around the work
+            </p>
+            <h2 className="mt-3 font-display text-4xl font-extrabold leading-tight tracking-tight text-care-ink text-balance dark:text-care-night-ink sm:text-5xl">
+              A lighter day for every person in the room.
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-care-muted dark:text-care-night-muted">
+              The small moments add up: one fewer call, one complete intake, one
+              patient who knows what happens next.
+            </p>
+            <div className="mt-8 flex items-center gap-3 border-t border-care-line pt-5 text-sm font-semibold text-care-muted dark:border-care-night-line dark:text-care-night-muted">
+              <UsersRound
+                className="size-5 text-care-blue-700 dark:text-care-blue-500"
+                aria-hidden="true"
+              />{" "}
+              Built for clinics and the people they serve
             </div>
-
-            {/* Feature Mock Interactive Illustration */}
-            <div className="lg:col-span-6">
-              <div className="rounded-2xl border border-care-line bg-care-canvas p-6 shadow-inner dark:border-care-night-line dark:bg-care-night-card">
-                <div className="flex items-center justify-between border-b border-care-line pb-4 dark:border-care-night-line">
-                  <div className="flex items-center gap-2">
-                    <span className="size-3 rounded-full bg-care-green-700 dark:bg-care-green-100" />
-                    <span className="font-display text-xs font-bold uppercase tracking-wider text-care-muted dark:text-care-night-muted">
-                      {activeFeature.preview.title}
-                    </span>
-                  </div>
-                  <span className="rounded-full bg-care-green-100 px-2.5 py-0.5 text-[11px] font-bold text-care-green-700 dark:bg-care-green-900 dark:text-care-green-100">
-                    Active Module
-                  </span>
+          </div>
+          <div>
+            <div className="grid gap-2 border-b border-care-line pb-3 dark:border-care-night-line sm:grid-cols-3">
+              {features.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <button
+                    key={feature.id}
+                    type="button"
+                    onClick={() => setActiveId(feature.id)}
+                    className={`flex items-center gap-3 border-b-2 px-2 py-3 text-left text-sm font-bold transition-[border-color,color] ${activeId === feature.id ? "border-care-green-700 text-care-green-700 dark:border-care-green-600 dark:text-care-green-100" : "border-transparent text-care-muted hover:text-care-ink dark:text-care-night-muted dark:hover:text-care-night-ink"}`}
+                  >
+                    <Icon className="size-4 shrink-0" aria-hidden="true" />
+                    <span>{feature.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-8 grid gap-8 md:grid-cols-[1fr_0.8fr]">
+              <div>
+                <div className="grid size-12 place-items-center rounded-lg bg-care-green-100 text-care-green-700 dark:bg-care-green-900/40 dark:text-care-green-100">
+                  <ActiveIcon className="size-6" aria-hidden="true" />
                 </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="rounded-xl border border-care-line bg-white p-5 shadow-sm dark:border-care-night-line dark:bg-care-night-panel">
-                    <p className="text-xs font-semibold text-care-muted dark:text-care-night-muted">
-                      Feature Context
-                    </p>
-                    <p className="mt-1 font-display text-base font-bold text-care-ink dark:text-care-night-ink">
-                      {activeFeature.preview.detail}
-                    </p>
+                <h3 className="mt-5 font-display text-2xl font-extrabold text-care-ink dark:text-care-night-ink">
+                  {activeFeature.title}
+                </h3>
+                <p className="mt-3 text-base leading-relaxed text-care-muted dark:text-care-night-muted">
+                  {activeFeature.description}
+                </p>
+                <ul className="mt-6 grid gap-3">
+                  {activeFeature.points.map((point) => (
+                    <li
+                      key={point}
+                      className="flex items-center gap-2 text-sm font-semibold text-care-ink dark:text-care-night-ink"
+                    >
+                      <Check
+                        className="size-4 text-care-green-700 dark:text-care-green-100"
+                        aria-hidden="true"
+                      />{" "}
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="border border-care-line bg-care-canvas p-5 dark:border-care-night-line dark:bg-care-night-panel">
+                <div className="flex items-center justify-between border-b border-care-line pb-4 dark:border-care-night-line">
+                  <span className="flex items-center gap-2 text-xs font-bold text-care-muted dark:text-care-night-muted">
+                    <LockKeyhole className="size-4" aria-hidden="true" />{" "}
+                    Protected records
+                  </span>
+                  <ShieldCheck
+                    className="size-4 text-care-green-700 dark:text-care-green-100"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className="mt-5 space-y-4">
+                  <div className="flex gap-3">
+                    <MessageSquareText
+                      className="size-5 shrink-0 text-care-blue-700 dark:text-care-blue-500"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-care-ink dark:text-care-night-ink">
+                        Clear patient updates
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-care-muted dark:text-care-night-muted">
+                        One place for the details that keep care moving.
+                      </p>
+                    </div>
                   </div>
-
-                  <div className="flex items-center justify-between rounded-xl bg-care-green-900/10 p-4 text-xs font-semibold text-care-green-800 dark:bg-care-green-900/40 dark:text-care-green-100">
-                    <span>🛡️ HIPAA Technical Safeguard Compliant</span>
-                    <span>Audit Ready</span>
+                  <div className="flex gap-3">
+                    <FileText
+                      className="size-5 shrink-0 text-care-blue-700 dark:text-care-blue-500"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-care-ink dark:text-care-night-ink">
+                        Notes with context
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-care-muted dark:text-care-night-muted">
+                        Relevant information is ready when the visit begins.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -204,56 +168,52 @@ function FeaturesSection() {
           </div>
         </div>
 
-        {/* How It Works Steps */}
-        <div id="how-it-works" className="mt-20">
-          <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-care-green-700 dark:text-care-green-100">
-              Simple 3-Step Setup
-            </span>
-            <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-care-ink dark:text-care-night-ink sm:text-3xl">
-              How AbsoluteCare fits into your day
+        <div
+          id="how-it-works"
+          className="mt-24 border-t border-care-line pt-16 dark:border-care-night-line"
+        >
+          <div className="max-w-2xl">
+            <p className="text-sm font-bold text-care-blue-700 dark:text-care-blue-500">
+              How it works
+            </p>
+            <h3 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-care-ink text-balance dark:text-care-night-ink sm:text-4xl">
+              From first booking to next steps, the handoff stays clear.
             </h3>
           </div>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <div className="rounded-2xl border border-care-line bg-white p-6 dark:border-care-night-line dark:bg-care-night-card">
-              <span className="grid size-10 place-items-center rounded-xl bg-care-green-100 font-display text-lg font-bold text-care-green-700 dark:bg-care-green-900 dark:text-care-green-100">
-                1
-              </span>
-              <h4 className="mt-4 font-display text-lg font-bold text-care-ink dark:text-care-night-ink">
-                Set Your Practice Hours
-              </h4>
-              <p className="mt-2 text-sm leading-relaxed text-care-muted dark:text-care-night-muted">
-                Connect your calendar, set your available booking windows, and
-                define custom buffer times between appointments.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-care-line bg-white p-6 dark:border-care-night-line dark:bg-care-night-card">
-              <span className="grid size-10 place-items-center rounded-xl bg-care-blue-100 font-display text-lg font-bold text-care-blue-700 dark:bg-care-blue-900/60 dark:text-care-blue-500">
-                2
-              </span>
-              <h4 className="mt-4 font-display text-lg font-bold text-care-ink dark:text-care-night-ink">
-                Share Your Booking Link
-              </h4>
-              <p className="mt-2 text-sm leading-relaxed text-care-muted dark:text-care-night-muted">
-                Send your booking link or add it to your website. Patients
-                choose a slot, complete intake details, and confirm.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-care-line bg-white p-6 dark:border-care-night-line dark:bg-care-night-card">
-              <span className="grid size-10 place-items-center rounded-xl bg-care-green-100 font-display text-lg font-bold text-care-green-700 dark:bg-care-green-900 dark:text-care-green-100">
-                3
-              </span>
-              <h4 className="mt-4 font-display text-lg font-bold text-care-ink dark:text-care-night-ink">
-                Focus Fully On Care
-              </h4>
-              <p className="mt-2 text-sm leading-relaxed text-care-muted dark:text-care-night-muted">
-                Reminders handle attendance, intake details arrive pre-visit,
-                and your team can focus on treatment.
-              </p>
-            </div>
+          <div className="mt-10 grid gap-8 md:grid-cols-3">
+            {[
+              {
+                icon: CalendarClock,
+                title: "Shape availability",
+                text: "Set hours and buffers that reflect how your clinic actually works.",
+              },
+              {
+                icon: NotebookPen,
+                title: "Collect context",
+                text: "Patients complete the essentials before the appointment starts.",
+              },
+              {
+                icon: ClipboardCheck,
+                title: "Keep care moving",
+                text: "Reminders and notes make the next action easy to find.",
+              },
+            ].map(({ icon: Icon, title, text }) => (
+              <article
+                key={title}
+                className="border-l-2 border-care-green-700 pl-5 dark:border-care-green-600"
+              >
+                <Icon
+                  className="size-6 text-care-green-700 dark:text-care-green-100"
+                  aria-hidden="true"
+                />
+                <h4 className="mt-4 font-display text-lg font-bold text-care-ink dark:text-care-night-ink">
+                  {title}
+                </h4>
+                <p className="mt-2 text-sm leading-relaxed text-care-muted dark:text-care-night-muted">
+                  {text}
+                </p>
+              </article>
+            ))}
           </div>
         </div>
       </div>

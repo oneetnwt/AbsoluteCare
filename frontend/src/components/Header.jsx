@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
+import { Menu, Plus, ShieldCheck, X } from "lucide-react";
 
 function Header({ onNavigate, onOpenHipaa }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -23,18 +24,12 @@ function Header({ onNavigate, onOpenHipaa }) {
           onClick={() => onNavigate("home")}
           className="flex items-center gap-3 border-0 bg-transparent p-0 text-left font-display text-xl font-extrabold tracking-tight text-care-ink dark:text-care-night-ink"
         >
-          <span className="grid size-9 place-items-center rounded-xl bg-care-green-700 text-lg font-bold text-white shadow-md shadow-care-green-700/20 dark:bg-care-green-600">
-            <svg
-              className="size-5 fill-none stroke-current stroke-[2.5]"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+          <span className="grid size-9 place-items-center rounded-lg bg-care-green-700 text-white shadow-md shadow-care-green-700/20 dark:bg-care-green-600">
+            <Plus className="size-5" strokeWidth={2.5} aria-hidden="true" />
           </span>
           <span className="flex flex-col">
             <span className="leading-none">AbsoluteCare</span>
-            <span className="text-[0.65rem] font-semibold tracking-wider text-care-muted uppercase dark:text-care-night-muted">
+            <span className="text-[0.65rem] font-semibold text-care-muted dark:text-care-night-muted">
               Physical therapy scheduling
             </span>
           </span>
@@ -70,7 +65,7 @@ function Header({ onNavigate, onOpenHipaa }) {
             onClick={onOpenHipaa}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-care-green-700 hover:underline dark:text-care-green-100"
           >
-            <span className="size-2 rounded-full bg-emerald-500" />
+            <ShieldCheck className="size-4" aria-hidden="true" />
             HIPAA Info
           </button>
         </nav>
@@ -90,7 +85,7 @@ function Header({ onNavigate, onOpenHipaa }) {
             onClick={() => onNavigate("signup")}
             className="rounded-lg border-0 bg-care-green-700 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-care-green-700/20 transition hover:bg-care-green-800 active:scale-95 dark:bg-care-green-600 dark:hover:bg-care-green-700"
           >
-            Get started
+            Create account
           </button>
         </div>
 
@@ -104,7 +99,11 @@ function Header({ onNavigate, onOpenHipaa }) {
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? "✕" : "☰"}
+            {mobileMenuOpen ? (
+              <X className="size-5" aria-hidden="true" />
+            ) : (
+              <Menu className="size-5" aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>
@@ -141,7 +140,7 @@ function Header({ onNavigate, onOpenHipaa }) {
               }}
               className="flex items-center gap-2 py-1 text-left text-sm font-semibold text-care-green-700 dark:text-care-green-100"
             >
-              <span className="size-2 rounded-full bg-emerald-500" />
+              <ShieldCheck className="size-4" aria-hidden="true" />
               HIPAA & Security Assurance
             </button>
             <div className="mt-3 grid gap-2 pt-3 border-t border-care-line dark:border-care-night-line">
@@ -157,7 +156,7 @@ function Header({ onNavigate, onOpenHipaa }) {
                 onClick={() => handleNavClick("signup")}
                 className="w-full rounded-lg bg-care-green-700 py-2.5 text-center font-bold text-white shadow-md"
               >
-                Get started
+                Create account
               </button>
             </div>
           </nav>

@@ -1,6 +1,20 @@
 import { useState } from "react";
+import {
+  ArrowUpRight,
+  CalendarClock,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  History,
+  ListChecks,
+  Camera,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+import { getStoredUser, setStoredUser } from "../auth/authStorage";
 import EmptyState from "../components/EmptyState";
 import PortalLayout from "../components/PortalLayout";
+import { useToast } from "../context/ToastContext.js";
 
 const roleConfig = {
   patient: {
@@ -138,91 +152,173 @@ function StatusBadge({ status }) {
   );
 }
 
-function Overview({ role, onSelect }) {
-  const labels =
-    role === "patient"
-      ? ["Pending requests", "Upcoming visits", "Past visits"]
-      : role === "admin"
-        ? ["Patients", "Therapists", "Appointments"]
-        : role === "secretary"
-          ? ["Today", "Needs attention", "Completed"]
-          : ["Assigned patients", "Upcoming visits", "Previous visits"];
+function MetricIcon({ type }) {
+  const icons = {
+    pending: ClipboardList,
+    upcoming: CalendarDays,
+    past: History,
+  };
+  const Icon = icons[type] || ClipboardList;
+  return <Icon className="size-5" strokeWidth={1.8} aria-hidden="true" />;
+}
+
+function SchedulePlaceholder() {
   return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {labels.map((label) => (
-          <div key={label} className="care-card p-5">
-            <p className="text-sm font-semibold text-care-muted dark:text-care-night-muted">
-              {label}
+    <div className="border border-dashed border-care-line bg-care-canvas/60 p-5 dark:border-care-night-line dark:bg-care-night-card/40">
+      <div className="flex items-start gap-3">
+        <CalendarClock
+          className="mt-0.5 size-5 shrink-0 text-care-blue-700 dark:text-care-blue-500"
+          aria-hidden="true"
+        />
+        <div>
+          <p className="text-sm font-bold text-care-ink dark:text-care-night-ink">
+            No appointments scheduled yet
+          </p>
+          <p className="mt-1 max-w-md text-sm leading-relaxed text-care-muted dark:text-care-night-muted">
+            Connected appointment details, times, and preparation notes will
+            appear here.
+          </p>
+        </div>
+      </div>
+      <div className="mt-6 grid gap-2 sm:grid-cols-3">
+        {["Morning", "Afternoon", "Follow-up"].map((period) => (
+          <div
+            key={period}
+            className="border border-care-line bg-white px-3 py-3 dark:border-care-night-line dark:bg-care-night-panel"
+          >
+            <p className="text-xs font-bold text-care-muted dark:text-care-night-muted">
+              {period}
             </p>
-            <p className="mt-4 font-display text-3xl font-extrabold text-care-ink dark:text-care-night-ink">
-              —
-            </p>
-            <p className="mt-1 text-xs text-care-muted dark:text-care-night-muted">
-              Waiting for connected data
+            <p className="mt-2 text-sm font-bold text-care-ink dark:text-care-night-ink">
+              No visits
             </p>
           </div>
         ))}
       </div>
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+    </div>
+  );
+}
+
+function DashboardOverview({ role, onSelect }) {
+  const metrics =
+    role === "patient"
+      ? [
+          ["Upcoming visits", "0", "Nothing scheduled", "upcoming"],
+          ["Pending requests", "0", "No requests yet", "pending"],
+          ["Completed visits", "0", "No visit history", "past"],
+        ]
+      : role === "therapist"
+        ? [
+            ["Today’s visits", "0", "No visits scheduled", "upcoming"],
+            ["Open notes", "0", "Nothing to finish", "pending"],
+            ["Assigned patients", "0", "No patients yet", "past"],
+          ]
+        : role === "admin"
+          ? [
+              ["Appointments", "0", "No appointments yet", "upcoming"],
+              ["Patients", "0", "No patient records", "past"],
+              ["Therapists", "0", "No therapist records", "pending"],
+            ]
+          : [
+              ["Today’s visits", "0", "No visits scheduled", "upcoming"],
+              ["Needs attention", "0", "Nothing to review", "pending"],
+              ["Completed", "0", "No completed visits", "past"],
+            ];
+  const actions =
+    role === "patient"
+      ? [
+          ["appointments", "Request an appointment", CalendarDays],
+          ["profile", "Complete your profile", UserRound],
+        ]
+      : role === "therapist"
+        ? [
+            ["schedule", "Set working hours", CalendarClock],
+            ["sessions", "Record a session", ListChecks],
+          ]
+        : role === "admin"
+          ? [
+              ["users", "Add a user", UserRound],
+              ["services", "Add a service", ClipboardList],
+            ]
+          : [
+              ["schedule", "Open clinic schedule", CalendarClock],
+              ["appointments", "Find an appointment", CalendarDays],
+            ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {metrics.map(([label, value, detail, type]) => (
+          <div key={label} className="care-card relative overflow-hidden p-5">
+            <span
+              className="absolute inset-y-0 left-0 w-1 bg-care-green-700 dark:bg-care-green-600"
+              aria-hidden="true"
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-care-muted dark:text-care-night-muted">
+                {label}
+              </p>
+              <span className="grid size-8 place-items-center rounded-lg bg-care-blue-50 text-care-blue-700 dark:bg-care-blue-900/30 dark:text-care-blue-100">
+                <MetricIcon type={type} />
+              </span>
+            </div>
+            <p className="mt-5 font-display text-3xl font-extrabold leading-none text-care-ink dark:text-care-night-ink">
+              {value}
+            </p>
+            <p className="mt-2 text-xs text-care-muted dark:text-care-night-muted">
+              {detail}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <Panel
-          title="Today’s workspace"
-          description="Your connected activity will appear here."
+          title="Today’s schedule"
+          description="Your next appointments and preparation details will appear here."
         >
-          <EmptyState
-            title="No activity yet"
-            description="There are no records to show. New activity will appear once your workspace is connected."
-            actionLabel={
-              role === "patient" ? "Request an appointment" : undefined
-            }
-            onAction={
-              role === "patient" ? () => onSelect("appointments") : undefined
-            }
-          />
+          <SchedulePlaceholder />
         </Panel>
         <Panel
-          title="Quick actions"
-          description="Start with a blank workflow when you are ready."
+          title="Next actions"
+          description="Go straight to the work that matters most."
         >
           <div className="grid gap-2">
-            {(role === "patient"
-              ? [
-                  ["appointments", "Request appointment"],
-                  ["profile", "Complete profile"],
-                ]
-              : role === "therapist"
-                ? [
-                    ["schedule", "Set working hours"],
-                    ["sessions", "Record a session"],
-                  ]
-                : role === "admin"
-                  ? [
-                      ["users", "Add a user"],
-                      ["services", "Add a service"],
-                    ]
-                  : [
-                      ["schedule", "Open clinic schedule"],
-                      ["appointments", "Find an appointment"],
-                    ]
-            ).map(([view, label]) => (
+            {actions.map(([view, label, Icon]) => (
               <button
                 key={view}
                 type="button"
                 onClick={() => onSelect(view)}
-                className="flex items-center justify-between rounded-xl border border-care-line px-4 py-3 text-left text-sm font-bold text-care-ink transition hover:border-care-green-700 hover:bg-care-green-50 dark:border-care-night-line dark:text-care-night-ink dark:hover:border-care-green-600 dark:hover:bg-care-green-900/20"
+                className="flex items-center gap-3 rounded-lg border border-care-line px-4 py-3 text-left text-sm font-bold text-care-ink transition-[background-color,border-color,color] hover:border-care-green-700 hover:bg-care-green-50 dark:border-care-night-line dark:text-care-night-ink dark:hover:border-care-green-600 dark:hover:bg-care-green-900/20"
               >
-                {label}
-                <span aria-hidden="true">+</span>
+                <span className="grid size-8 place-items-center rounded-md bg-care-blue-50 text-care-blue-700 dark:bg-care-blue-900/30 dark:text-care-blue-100">
+                  <Icon className="size-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">{label}</span>
+                <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
               </button>
             ))}
           </div>
+          <div className="mt-5 flex items-start gap-2 border-t border-care-line pt-4 text-xs leading-relaxed text-care-muted dark:border-care-night-line dark:text-care-night-muted">
+            <CheckCircle2
+              className="mt-0.5 size-4 shrink-0 text-care-green-700 dark:text-care-green-100"
+              aria-hidden="true"
+            />
+            Your account is ready for connected scheduling data.
+          </div>
         </Panel>
       </div>
-    </>
+    </div>
   );
 }
 
+function Overview({ role, onSelect }) {
+  return <DashboardOverview role={role} onSelect={onSelect} />;
+}
+
 function ProfileView({ role }) {
+  const { showToast } = useToast();
+  const storedUser = getStoredUser();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -230,6 +326,10 @@ function ProfileView({ role }) {
     phone: "",
     specialization: "",
   });
+  const [profileImage, setProfileImage] = useState(
+    storedUser?.profileImage || "",
+  );
+  const [imageError, setImageError] = useState("");
   const [saved, setSaved] = useState(false);
   const update = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value });
@@ -237,13 +337,106 @@ function ProfileView({ role }) {
   };
   const submit = (event) => {
     event.preventDefault();
+    if (storedUser) {
+      setStoredUser({ ...storedUser, profileImage });
+    }
     setSaved(true);
+    showToast("Profile changes are ready to sync.", "success");
+  };
+  const selectProfileImage = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setImageError("Choose an image file, such as JPG or PNG.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setImageError("Choose an image smaller than 2 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfileImage(reader.result);
+      setImageError("");
+      setSaved(false);
+    };
+    reader.readAsDataURL(file);
+  };
+  const removeProfileImage = () => {
+    setProfileImage("");
+    setImageError("");
+    setSaved(false);
   };
   return (
     <Panel
       title="Profile"
       description="Keep your contact and professional details ready for connection."
     >
+      <div className="mb-6 flex flex-wrap items-center gap-4 border-b border-care-line pb-6 dark:border-care-night-line">
+        <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-full border border-care-line bg-care-blue-50 text-care-blue-700 dark:border-care-night-line dark:bg-care-blue-900/30 dark:text-care-blue-100">
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="Profile preview"
+              width="80"
+              height="80"
+              className="size-full object-cover"
+            />
+          ) : (
+            <UserRound className="size-8" aria-hidden="true" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-display text-base font-bold text-care-ink dark:text-care-night-ink">
+            Profile picture
+          </h3>
+          <p className="mt-1 text-sm text-care-muted dark:text-care-night-muted">
+            Add a recognizable image for your scheduling account.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <label
+              htmlFor="profile-picture"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-care-line px-3 py-2 text-xs font-bold text-care-ink transition-[background-color,border-color] hover:border-care-green-700 hover:bg-care-green-50 dark:border-care-night-line dark:text-care-night-ink dark:hover:border-care-green-600 dark:hover:bg-care-green-900/20"
+            >
+              <Camera className="size-4" aria-hidden="true" />
+              {profileImage ? "Replace picture" : "Choose picture"}
+            </label>
+            <input
+              id="profile-picture"
+              name="profileImage"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={selectProfileImage}
+              aria-describedby="profile-picture-help"
+              className="sr-only"
+            />
+            {profileImage && (
+              <button
+                type="button"
+                onClick={removeProfileImage}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-care-error transition-colors hover:bg-care-error-bg"
+              >
+                <Trash2 className="size-4" aria-hidden="true" />
+                Remove picture
+              </button>
+            )}
+          </div>
+          <p
+            id="profile-picture-help"
+            className="mt-2 text-xs text-care-muted dark:text-care-night-muted"
+          >
+            JPG, PNG, or WebP. Maximum 2 MB.
+          </p>
+          {imageError && (
+            <p
+              role="alert"
+              className="mt-2 text-xs font-semibold text-care-error"
+            >
+              {imageError}
+            </p>
+          )}
+        </div>
+      </div>
       <form onSubmit={submit} className="grid gap-5 sm:grid-cols-2">
         <Field
           label="First name"
@@ -280,7 +473,7 @@ function ProfileView({ role }) {
             name="specialization"
             value={form.specialization}
             onChange={update}
-            placeholder="Add specialization"
+            placeholder="Add specialization…"
           />
         )}
         <div className="flex items-center gap-3 sm:col-span-2">
@@ -305,6 +498,7 @@ function ProfileView({ role }) {
 }
 
 function AppointmentRequest({ onDone }) {
+  const { showToast } = useToast();
   const [form, setForm] = useState({
     service: "",
     date: "",
@@ -325,6 +519,7 @@ function AppointmentRequest({ onDone }) {
       return;
     }
     setSent(true);
+    showToast("Appointment request is ready to send.", "success");
   };
   if (sent)
     return (
@@ -382,7 +577,7 @@ function AppointmentRequest({ onDone }) {
         name="note"
         value={form.note}
         onChange={update}
-        placeholder="Optional"
+        placeholder="Optional note…"
       />
       <div className="sm:col-span-2">
         <button
@@ -480,8 +675,10 @@ function AppointmentsView({ role, onSelect }) {
           description="Search the connected clinic schedule by patient or appointment."
         >
           <input
+            name="appointmentSearch"
             className="care-input"
-            placeholder="Search by patient or appointment"
+            placeholder="Search by patient or appointment…"
+            autoComplete="off"
             aria-label="Search appointments"
           />
           <div className="mt-5">
@@ -500,6 +697,7 @@ function AppointmentsView({ role, onSelect }) {
 }
 
 function AppointmentWorkflow({ role }) {
+  const { showToast } = useToast();
   const [form, setForm] = useState({ date: "", time: "", reason: "" });
   const [selectedStatus, setSelectedStatus] = useState("pending");
   const [message, setMessage] = useState("");
@@ -516,6 +714,7 @@ function AppointmentWorkflow({ role }) {
       return;
     }
     setMessage("Reschedule request ready to sync.");
+    showToast("Reschedule request is ready to sync.", "success");
   };
   return (
     <Panel
@@ -549,7 +748,7 @@ function AppointmentWorkflow({ role }) {
               name="reason"
               value={form.reason}
               onChange={update}
-              placeholder="Add a short reason"
+              placeholder="Add a short reason…"
               required
             />
             <button
@@ -566,7 +765,10 @@ function AppointmentWorkflow({ role }) {
             </p>
             <button
               type="button"
-              onClick={() => setMessage("No-show action ready to sync.")}
+              onClick={() => {
+                setMessage("No-show action ready to sync.");
+                showToast("No-show action is ready to sync.");
+              }}
               className="mt-5 rounded-xl border border-care-error px-4 py-2.5 text-sm font-bold text-care-error"
             >
               Mark no-show
@@ -602,11 +804,11 @@ function AppointmentWorkflow({ role }) {
               <button
                 key={action}
                 type="button"
-                onClick={() =>
-                  setMessage(
-                    `${action} action ready to sync for ${selectedStatus} appointments.`,
-                  )
-                }
+                onClick={() => {
+                  const message = `${action} action ready to sync for ${selectedStatus} appointments.`;
+                  setMessage(message);
+                  showToast(message);
+                }}
                 className="rounded-xl border border-care-line px-3 py-2 text-sm font-bold text-care-ink hover:border-care-green-700 dark:border-care-night-line dark:text-care-night-ink"
               >
                 {action}
@@ -628,6 +830,7 @@ function AppointmentWorkflow({ role }) {
 }
 
 function ScheduleView({ role }) {
+  const { showToast } = useToast();
   const [hours, setHours] = useState({
     monday: false,
     tuesday: false,
@@ -655,6 +858,7 @@ function ScheduleView({ role }) {
         onSubmit={(event) => {
           event.preventDefault();
           setSaved(true);
+          showToast("Availability is ready to sync.", "success");
         }}
         className="space-y-6"
       >
@@ -713,6 +917,7 @@ function ScheduleView({ role }) {
 }
 
 function SessionsView({ role }) {
+  const { showToast } = useToast();
   const [form, setForm] = useState({ date: "", duration: "", notes: "" });
   const [saved, setSaved] = useState(false);
   const update = (event) => {
@@ -743,6 +948,7 @@ function SessionsView({ role }) {
             onSubmit={(event) => {
               event.preventDefault();
               setSaved(true);
+              showToast("Session note is ready to sync.", "success");
             }}
             className="space-y-5"
           >
@@ -759,7 +965,7 @@ function SessionsView({ role }) {
               name="duration"
               value={form.duration}
               onChange={update}
-              placeholder="Minutes"
+              placeholder="Minutes…"
               required
             />
             <label className="grid gap-1.5 text-sm font-semibold">
@@ -804,6 +1010,7 @@ function SessionsView({ role }) {
 }
 
 function AdminView({ view }) {
+  const { showToast } = useToast();
   const [actionMessage, setActionMessage] = useState("");
   const titles = {
     users: "User accounts",
@@ -873,15 +1080,21 @@ function AdminView({ view }) {
   return (
     <Panel
       title={titles[view] || "Administration"}
-      description="Search, filter, and manage connected records from this workspace."
+      description="Search, filter, and manage records from the scheduling system."
     >
       <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         <input
           className="care-input"
-          placeholder="Search records"
+          name="recordSearch"
+          placeholder="Search records…"
+          autoComplete="off"
           aria-label="Search records"
         />
-        <select className="care-input sm:max-w-48" aria-label="Filter records">
+        <select
+          name="recordStatus"
+          className="care-input sm:max-w-48"
+          aria-label="Filter records"
+        >
           <option>All statuses</option>
           <option>Active</option>
           <option>Inactive</option>
@@ -892,11 +1105,11 @@ function AdminView({ view }) {
           <button
             key={action}
             type="button"
-            onClick={() =>
-              setActionMessage(
-                `${action} is ready to connect to the records API.`,
-              )
-            }
+            onClick={() => {
+              const message = `${action} is ready to connect to the records API.`;
+              setActionMessage(message);
+              showToast(message);
+            }}
             className="rounded-xl border border-care-line px-3 py-2 text-sm font-bold text-care-ink hover:border-care-green-700 dark:border-care-night-line dark:text-care-night-ink"
           >
             {action}
@@ -913,7 +1126,7 @@ function AdminView({ view }) {
       )}
       <EmptyState
         title={`No ${titles[view]?.toLowerCase() || "records"} yet`}
-        description="Connected records will appear here. The table is ready for live data."
+        description="Scheduling records will appear here when live data is available."
       />
     </Panel>
   );
@@ -1008,16 +1221,18 @@ function PortalPage({ role, onNavigate, onLogout }) {
     >
       <div className="mb-8">
         <p className="text-sm font-bold text-care-green-700 dark:text-care-green-100">
-          {config.label} portal
+          {config.label} dashboard
         </p>
         <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-care-ink dark:text-care-night-ink">
           {config.intro}
         </h2>
         <p className="mt-2 text-sm text-care-muted dark:text-care-night-muted">
-          Empty by design until your clinic connection is ready.
+          Your scheduling data will appear here once it is connected.
         </p>
       </div>
-      {content}
+      <div key={activeView} className="care-dashboard-view">
+        {content}
+      </div>
     </PortalLayout>
   );
 }

@@ -4,6 +4,9 @@ import AuthDivider from "./AuthDivider";
 import GoogleAuthButton from "./GoogleAuthButton";
 import axiosInstance from "../api/axiosInstance";
 import HipaaModal from "./HipaaModal";
+import ReCAPTCHA from "react-google-recaptcha";
+
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 function SignupForm({ onNavigate }) {
   const [form, setForm] = useState({
@@ -21,6 +24,7 @@ function SignupForm({ onNavigate }) {
     isError: false,
   });
   const [isHipaaModalOpen, setIsHipaaModalOpen] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const update = (field) => (event) => {
     const value =
@@ -46,6 +50,7 @@ function SignupForm({ onNavigate }) {
       nextErrors.confirm = "Passwords do not match.";
     if (!form.terms)
       nextErrors.terms = "Please accept the terms and HIPAA safeguard policy.";
+    if (!captchaToken) nextErrors.captcha = "Complete the reCAPTCHA check.";
 
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
@@ -62,6 +67,7 @@ function SignupForm({ onNavigate }) {
         email: form.email,
         password: form.password,
         confirmpassword: form.confirm,
+        captchaToken,
       });
 
       setLoading(false);
@@ -71,6 +77,7 @@ function SignupForm({ onNavigate }) {
           "Account created successfully! Welcome to AbsoluteCare.",
         isError: false,
       });
+      onNavigate("/login");
     } catch (err) {
       setLoading(false);
       if (err.response && err.response.data && err.response.data.message) {
@@ -89,21 +96,21 @@ function SignupForm({ onNavigate }) {
       <div className="mb-5">
         <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-care-blue-700/20 bg-care-blue-50/70 px-2.5 py-0.5 text-xs font-semibold text-care-blue-700 dark:border-care-blue-500/30 dark:bg-care-blue-900/30 dark:text-care-blue-100">
           <span className="size-1.5 rounded-full bg-care-blue-500" />
-          Physical Therapy Registration
+          Create your scheduling account
         </div>
         <h1
           id="auth-title"
           className="font-display text-2xl font-bold tracking-tight text-care-ink dark:text-care-night-ink sm:text-3xl"
         >
-          Create your account
+          Start scheduling with AbsoluteCare
         </h1>
         <p className="mt-1.5 text-sm text-care-muted dark:text-care-night-muted">
-          Set up scheduling, rehabilitation appointments, and care records.
+          Set up appointments, reminders, and patient details in minutes.
         </p>
       </div>
 
       <div className="space-y-4">
-        <GoogleAuthButton label="Sign up with Google Workspace" />
+        <GoogleAuthButton label="Continue with Google" />
         <AuthDivider />
 
         <form onSubmit={submit} noValidate className="space-y-4">
@@ -219,6 +226,28 @@ function SignupForm({ onNavigate }) {
             autoComplete="new-password"
           />
 
+          {recaptchaSiteKey ? (
+            <div>
+              <ReCAPTCHA
+                sitekey={recaptchaSiteKey}
+                onChange={(token) => {
+                  setCaptchaToken(token || "");
+                  setErrors({ ...errors, captcha: "" });
+                }}
+                onExpired={() => setCaptchaToken("")}
+              />
+              {errors.captcha && (
+                <p className="mt-2 text-xs font-semibold text-care-error">
+                  {errors.captcha}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p role="alert" className="text-xs font-semibold text-care-error">
+              reCAPTCHA is not configured. Contact the administrator.
+            </p>
+          )}
+
           {/* Terms & HIPAA Checkbox */}
           <div className="pt-1">
             <label className="flex items-start gap-2.5 text-xs text-care-muted dark:text-care-night-muted cursor-pointer">
@@ -268,7 +297,7 @@ function SignupForm({ onNavigate }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl border-0 bg-care-green-700 py-3 text-sm font-bold text-white shadow-sm shadow-care-green-700/25 transition-all hover:bg-care-green-800 active:scale-[0.99] disabled:opacity-60 dark:bg-care-green-600 dark:hover:bg-care-green-700"
+            className="w-full rounded-lg border-0 bg-care-green-700 py-3 text-sm font-bold text-white shadow-sm shadow-care-green-700/25 transition-[background-color,box-shadow,opacity,transform] hover:bg-care-green-800 active:scale-[0.99] disabled:opacity-60 dark:bg-care-green-600 dark:hover:bg-care-green-700"
           >
             {loading ? "Creating account…" : "Create account"}
           </button>

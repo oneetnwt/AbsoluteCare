@@ -1,23 +1,15 @@
+import { FileText } from "lucide-react";
+
 function EmptyState({
   title = "No data yet",
-  description = "This space will fill in when your connected records are available.",
+  description = "Your scheduling data will appear here when it is available.",
   actionLabel,
   onAction,
 }) {
   return (
     <div className="flex min-h-52 flex-col items-center justify-center rounded-2xl border border-dashed border-care-line bg-care-canvas/60 px-6 py-10 text-center dark:border-care-night-line dark:bg-care-night-card/40">
       <div className="grid size-11 place-items-center rounded-2xl bg-care-blue-50 text-care-blue-700 dark:bg-care-blue-900/30 dark:text-care-blue-100">
-        <svg
-          className="size-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
-          <path d="M8 10h8M8 14h5" />
-        </svg>
+        <FileText className="size-5" aria-hidden="true" />
       </div>
       <h3 className="mt-4 font-display text-base font-bold text-care-ink dark:text-care-night-ink">
         {title}

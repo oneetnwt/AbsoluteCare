@@ -4,6 +4,9 @@ import AuthDivider from "./AuthDivider";
 import GoogleAuthButton from "./GoogleAuthButton";
 import axiosInstance from "../api/axiosInstance";
 import { setStoredUser } from "../auth/authStorage";
+import ReCAPTCHA from "react-google-recaptcha";
+
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 function LoginForm({ onNavigate }) {
   const [form, setForm] = useState({
@@ -17,6 +20,7 @@ function LoginForm({ onNavigate }) {
     text: "",
     isError: false,
   });
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const update = (field) => (event) => {
     const value =
@@ -37,6 +41,9 @@ function LoginForm({ onNavigate }) {
     if (!form.password) {
       nextErrors.password = "Enter your password.";
     }
+    if (!captchaToken) {
+      nextErrors.captcha = "Complete the reCAPTCHA check.";
+    }
 
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
@@ -50,6 +57,7 @@ function LoginForm({ onNavigate }) {
       const response = await axiosInstance.post("/auth/login", {
         email: form.email,
         password: form.password,
+        captchaToken,
       });
       if (!response.data.user) {
         throw new Error("The login response did not include a user.");
@@ -63,7 +71,7 @@ function LoginForm({ onNavigate }) {
         setStatusMessage({ text: err.response.data.message, isError: true });
       } else {
         setStatusMessage({
-          text: "Unable to sign in right now. Check that the API is running and try again.",
+          text: "Unable to sign in right now. Please try again later.",
           isError: true,
         });
       }
@@ -75,22 +83,22 @@ function LoginForm({ onNavigate }) {
       <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-care-blue-700/20 bg-care-blue-50/70 px-2.5 py-0.5 text-xs font-semibold text-care-blue-700 dark:border-care-blue-500/30 dark:bg-care-blue-900/30 dark:text-care-blue-100">
           <span className="size-1.5 rounded-full bg-care-blue-500" />
-          Physical Therapy Portal
+          AbsoluteCare Scheduling
         </div>
         <h1
           id="auth-title"
           className="font-display text-2xl font-bold tracking-tight text-care-ink dark:text-care-night-ink sm:text-3xl"
         >
-          Sign in to your account
+          Sign in to manage appointments
         </h1>
         <p className="mt-2 text-sm text-care-muted dark:text-care-night-muted">
-          Manage physical therapy appointments, rehabilitation plans, and
-          patient records.
+          Manage appointments, patient details, and treatment records in one
+          clear system.
         </p>
       </div>
 
       <div className="space-y-4">
-        <GoogleAuthButton label="Sign in with Google Workspace" />
+        <GoogleAuthButton label="Continue with Google" />
         <AuthDivider />
 
         <form onSubmit={submit} noValidate className="space-y-4">
@@ -131,6 +139,28 @@ function LoginForm({ onNavigate }) {
             autoComplete="current-password"
           />
 
+          {recaptchaSiteKey ? (
+            <div>
+              <ReCAPTCHA
+                sitekey={recaptchaSiteKey}
+                onChange={(token) => {
+                  setCaptchaToken(token || "");
+                  setErrors({ ...errors, captcha: "" });
+                }}
+                onExpired={() => setCaptchaToken("")}
+              />
+              {errors.captcha && (
+                <p className="mt-2 text-xs font-semibold text-care-error">
+                  {errors.captcha}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p role="alert" className="text-xs font-semibold text-care-error">
+              reCAPTCHA is not configured. Contact the administrator.
+            </p>
+          )}
+
           <div className="flex items-center justify-between gap-2 pt-1 text-xs">
             <label className="flex items-center gap-2 font-medium text-care-muted dark:text-care-night-muted cursor-pointer">
               <input
@@ -153,9 +183,9 @@ function LoginForm({ onNavigate }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl border-0 bg-care-green-700 py-3 text-sm font-bold text-white shadow-sm shadow-care-green-700/25 transition-all hover:bg-care-green-800 active:scale-[0.99] disabled:opacity-60 dark:bg-care-green-600 dark:hover:bg-care-green-700"
+            className="w-full rounded-lg border-0 bg-care-green-700 py-3 text-sm font-bold text-white shadow-sm shadow-care-green-700/25 transition-[background-color,box-shadow,opacity,transform] hover:bg-care-green-800 active:scale-[0.99] disabled:opacity-60 dark:bg-care-green-600 dark:hover:bg-care-green-700"
           >
-            {loading ? "Verifying credentials…" : "Sign in to AbsoluteCare"}
+            {loading ? "Signing in…" : "Sign in"}
           </button>
 
           {statusMessage.text && (
