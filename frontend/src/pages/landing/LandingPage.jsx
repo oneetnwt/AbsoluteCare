@@ -1,3 +1,7 @@
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
+import { AppLoader } from "../../components/dashboard/Skeleton";
+
 const benefits = [
   {
     icon: "01",
@@ -56,6 +60,23 @@ const steps = [
 ];
 
 function LandingPage() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <AppLoader />;
+
+  if (user) {
+    const dashboardPath =
+      user.role === "admin"
+        ? "/staff/admin"
+        : user.role === "therapist"
+          ? "/staff/therapist"
+          : user.role === "secretary"
+            ? "/staff/secretary"
+            : "/dashboard";
+
+    return <Navigate replace to={dashboardPath} />;
+  }
+
   return (
     <div className="site-shell">
       <header className="topbar">

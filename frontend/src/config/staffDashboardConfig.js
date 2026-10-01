@@ -10,6 +10,7 @@ export const staffRoles = {
       ["Patients", "patients"],
       ["Appointments", "appointments"],
       ["Therapy services", "services"],
+      ["Session history", "sessions"],
       ["Payments", "payments"],
       ["Reports", "reports"],
       ["Profile", "profile"],
@@ -32,7 +33,6 @@ export const staffRoles = {
       ["My patients", "patients"],
       ["Session records", "records"],
       ["Availability", "availability"],
-      ["Profile", "profile"],
     ],
     summaries: [
       ["Today's appointments", "—", "TH-008"],
@@ -68,6 +68,7 @@ const staffRouteSegments = {
     patients: "patients",
     appointments: "appointments",
     services: "services",
+    sessions: "sessions",
     payments: "payments",
     reports: "reports",
     profile: "profile",

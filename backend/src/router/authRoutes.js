@@ -6,7 +6,9 @@ import {
   googleStart,
   signup,
   login,
+  logout,
   checkAuth,
+  updateProfile,
 } from "../controller/authController.js";
 import { protectRoute } from "../middleware/authMiddleware.js";
 
@@ -14,11 +16,13 @@ const router = Router();
 
 router.post("/signup", signup);
 router.post("/login", login);
+router.post("/logout", logout);
 router.get("/google", googleStart);
 router.get("/google/callback", googleCallback);
 router.get("/google/session", googleSession);
 router.post("/google/complete", completeGoogleSignup);
 
 router.get("/me", protectRoute, checkAuth);
+router.patch("/profile", protectRoute, updateProfile);
 
 export default router;

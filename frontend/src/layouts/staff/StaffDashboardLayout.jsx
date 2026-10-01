@@ -1,132 +1,87 @@
-import { useState } from "react";
-import {
-  Link,
-  NavLink,
-  Outlet,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-import {
-  Activity,
-  BarChart3,
-  Bell,
-  CalendarDays,
-  ChevronDown,
-  CircleDollarSign,
-  ClipboardList,
-  HeartPulse,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Settings2,
-  ShieldCheck,
-  Stethoscope,
-  UserRound,
-  UsersRound,
-  X,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, Outlet, useNavigate, useParams } from "react-router-dom";
+import { Bell, ChevronDown, LogOut, Settings2, UserRound } from "lucide-react";
+import Sidebar from "../../components/dashboard/Sidebar";
 import { getStaffRole, getStaffRoute } from "../../config/staffDashboardConfig";
-
-const navigationIcons = {
-  dashboard: LayoutDashboard,
-  users: UsersRound,
-  therapists: Stethoscope,
-  patients: UserRound,
-  appointments: CalendarDays,
-  services: ClipboardList,
-  payments: CircleDollarSign,
-  reports: BarChart3,
-  records: ClipboardList,
-  availability: Activity,
-  profile: Settings2,
-};
+import { useSidebar } from "../../context/useSidebar";
+import { useAuth } from "../../context/useAuth";
+import { getTherapistAppointments } from "../../services/api/therapistApi";
 
 function StaffDashboardLayout({ role: routeRole }) {
   const { role: paramRole } = useParams();
-  const role = routeRole || paramRole;
+  const { user, loading: authLoading, logout } = useAuth();
+  const role = user?.role || routeRole || paramRole;
   const roleConfig = getStaffRole(role);
+  const { collapsed, sidebarWidth } = useSidebar();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+  const [assignedAppointmentsState, setAssignedAppointments] = useState(
+    role === "therapist" && user?.id ? null : [],
+  );
 
-  function logOut() {
+  useEffect(() => {
+    if (role !== "therapist" || !user?.id) return;
+    getTherapistAppointments()
+      .then((response) =>
+        setAssignedAppointments(response.data.appointments || []),
+      )
+      .catch(() => setAssignedAppointments([]));
+  }, [role, user?.id]);
+
+  const assignedAppointments = assignedAppointmentsState || [];
+  const appointmentsLoading =
+    role === "therapist" && assignedAppointmentsState === null;
+
+  const firstName = user?.firstName || user?.firstname || "";
+  const lastName = user?.lastName || user?.lastname || "";
+  const displayName = `${firstName} ${lastName}`.trim();
+  const initials =
+    `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase() || "…";
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    function moveProfileFocus(event) {
+      if (
+        !profileMenuRef.current ||
+        !["ArrowDown", "ArrowUp"].includes(event.key)
+      )
+        return;
+      const items = [...profileMenuRef.current.querySelectorAll("a, button")];
+      const currentIndex = items.indexOf(document.activeElement);
+      const nextIndex =
+        event.key === "ArrowDown"
+          ? (currentIndex + 1) % items.length
+          : (currentIndex - 1 + items.length) % items.length;
+      event.preventDefault();
+      items[nextIndex]?.focus();
+    }
+    document.addEventListener("keydown", moveProfileFocus);
+    return () => document.removeEventListener("keydown", moveProfileFocus);
+  }, [profileOpen]);
+
+  async function logOut() {
+    await logout();
     navigate("/staff/login");
   }
 
   return (
-    <div className="staff-dashboard-shell">
-      {sidebarOpen && (
-        <button
-          className="staff-dashboard-scrim"
-          type="button"
-          aria-label="Close navigation"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      <aside
-        className={`staff-dashboard-sidebar ${sidebarOpen ? "is-open" : ""}`}
-      >
-        <div className="staff-dashboard-brand-row">
-          <Link className="staff-dashboard-brand" to="/">
-            <span className="staff-dashboard-brand-mark">
-              <HeartPulse size={18} />
-            </span>
-            <span>
-              AbsoluteCare <small>Staff portal</small>
-            </span>
-          </Link>
-          <button
-            className="staff-sidebar-close"
-            type="button"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close navigation"
-          >
-            <X size={19} />
-          </button>
-        </div>
-        <div className="staff-role-chip">
-          <ShieldCheck size={14} />
-          <span>{roleConfig.label} access</span>
-        </div>
-        <nav
-          className="staff-dashboard-nav"
-          aria-label={`${roleConfig.label} navigation`}
-        >
-          <p>Workspace</p>
-          {roleConfig.navigation.map(([label, key]) => {
-            const Icon = navigationIcons[key] || LayoutDashboard;
-            return (
-              <NavLink
-                className={({ isActive }) =>
-                  `staff-dashboard-nav-link ${isActive ? "is-active" : ""}`
-                }
-                to={getStaffRoute(role, key)}
-                end={key === "dashboard"}
-                key={key}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
-                <span>{label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-        <div className="staff-sidebar-footer">
-          <span>Need help?</span>
-          <strong>Contact clinic admin</strong>
-        </div>
-      </aside>
+    <div
+      className={`staff-dashboard-shell${collapsed ? " is-sidebar-collapsed" : ""}`}
+      style={{ "--sidebar-width": sidebarWidth }}
+    >
+      <Sidebar
+        role={user?.role || role}
+        badgeCounts={
+          appointmentsLoading
+            ? {}
+            : { appointments: assignedAppointments.length }
+        }
+        onLogout={logOut}
+      />
       <div className="staff-dashboard-main">
         <header className="staff-dashboard-topbar">
-          <button
-            className="staff-sidebar-menu"
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open navigation"
-          >
-            <Menu size={21} />
-          </button>
           <div className="staff-topbar-title">
             <span>Staff portal</span>
             <b>/</b>
@@ -158,12 +113,30 @@ function StaffDashboardLayout({ role: routeRole }) {
                 onClick={() => setProfileOpen(!profileOpen)}
                 aria-expanded={profileOpen}
               >
-                <span className="staff-avatar">ST</span>
-                <span>Staff member</span>
+                <span className="staff-avatar">
+                  {user?.profilePicture ? (
+                    <img src={user.profilePicture} alt="" />
+                  ) : authLoading ? (
+                    <span
+                      className="staff-avatar-skeleton"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    initials
+                  )}
+                </span>
+                <span>
+                  {authLoading
+                    ? "Loading profile"
+                    : displayName || "Staff member"}
+                </span>
                 <ChevronDown size={14} />
               </button>
               {profileOpen && (
-                <div className="staff-popover staff-profile-menu">
+                <div
+                  className="staff-popover staff-profile-menu"
+                  ref={profileMenuRef}
+                >
                   <Link to={getStaffRoute(role, "profile")}>
                     <UserRound size={14} />
                     View profile
@@ -181,7 +154,14 @@ function StaffDashboardLayout({ role: routeRole }) {
             </div>
           </div>
         </header>
-        <Outlet context={{ role, roleConfig }} />
+        <Outlet
+          context={{
+            role,
+            roleConfig,
+            assignedAppointments,
+            appointmentsLoading,
+          }}
+        />
       </div>
     </div>
   );

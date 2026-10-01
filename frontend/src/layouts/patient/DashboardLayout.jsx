@@ -1,119 +1,109 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import {
-  Activity,
   Bell,
-  CalendarDays,
-  CalendarPlus,
   ChevronDown,
-  HeartPulse,
-  LayoutDashboard,
   LogOut,
-  Menu,
   UserRound,
   UserRoundCog,
-  UsersRound,
-  X,
 } from "lucide-react";
+import Sidebar from "../../components/dashboard/Sidebar";
+import { useSidebar } from "../../context/useSidebar";
+import { useAuth } from "../../context/useAuth";
 import { usePatientDashboard } from "../../hooks/usePatientDashboard";
-
-const navigation = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  {
-    label: "My Appointments",
-    icon: CalendarDays,
-    href: "/dashboard#appointments",
-  },
-  { label: "Book Appointment", icon: CalendarPlus, href: "/signup" },
-  { label: "Therapy Progress", icon: Activity, href: "/dashboard#history" },
-  { label: "My Dependents", icon: UsersRound, href: "/dashboard#dependents" },
-  {
-    label: "Profile & Settings",
-    icon: UserRoundCog,
-    href: "/dashboard#profile",
-  },
-];
+import {
+  getNotifications,
+  getUnreadNotificationCount,
+  markNotificationRead,
+} from "../../services/api/patientApi";
+import { relativeTime } from "../../utils/patientFormatters";
 
 function DashboardLayout() {
   const navigate = useNavigate();
   const dashboardState = usePatientDashboard();
   const { profile } = dashboardState;
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const headerProfile = user || profile;
+  const headerInitials =
+    `${headerProfile?.firstName?.[0] || headerProfile?.firstname?.[0] || ""}${headerProfile?.lastName?.[0] || headerProfile?.lastname?.[0] || ""}`.toUpperCase() ||
+    "AC";
+  const { collapsed, sidebarWidth } = useSidebar();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+  const notificationRef = useRef(null);
 
-  function logOut() {
+  const refreshNotifications = useCallback(
+    async function refreshNotifications() {
+      try {
+        const [listResponse, countResponse] = await Promise.all([
+          getNotifications(),
+          getUnreadNotificationCount(),
+        ]);
+        setNotifications(listResponse.data?.notifications?.slice(0, 5) || []);
+        setUnreadCount(countResponse.data?.count || 0);
+      } catch {
+        // Notification errors should not block the dashboard.
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const initialRefresh = window.setTimeout(refreshNotifications, 0);
+    const interval = window.setInterval(refreshNotifications, 60_000);
+    return () => {
+      window.clearTimeout(initialRefresh);
+      window.clearInterval(interval);
+    };
+  }, [refreshNotifications]);
+
+  useEffect(() => {
+    function handleDocumentClick(event) {
+      if (!profileMenuRef.current?.contains(event.target)) {
+        setProfileOpen(false);
+      }
+      if (!notificationRef.current?.contains(event.target))
+        setNotificationsOpen(false);
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setProfileOpen(false);
+        setNotificationsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  async function logOut() {
+    await logout();
     navigate("/login");
   }
 
   return (
-    <div className="dashboard-shell">
-      {sidebarOpen && (
-        <button
-          className="dashboard-scrim"
-          type="button"
-          aria-label="Close navigation"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      <aside className={`dashboard-sidebar ${sidebarOpen ? "is-open" : ""}`}>
-        <div className="dashboard-brand-wrap">
-          <Link className="dashboard-brand" to="/">
-            <span className="dashboard-brand-mark" aria-hidden="true">
-              <HeartPulse size={19} strokeWidth={2.2} />
-            </span>
-            <span>
-              AbsoluteCare <small>Therapy Center</small>
-            </span>
-          </Link>
-          <button
-            className="sidebar-close"
-            type="button"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close navigation"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <nav className="dashboard-nav" aria-label="Patient navigation">
-          <p className="dashboard-nav-label">Your care</p>
-          {navigation.map(({ label, icon: Icon, href }) => (
-            <Link
-              className={`dashboard-nav-link ${label === "Dashboard" ? "is-active" : ""}`}
-              key={label}
-              to={href}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-              <span>{label}</span>
-            </Link>
-          ))}
-        </nav>
-        <div className="sidebar-help">
-          <span className="sidebar-help-dot" />
-          <div>
-            <strong>Need a hand?</strong>
-            <span>Call 0917 715 2780</span>
-          </div>
-        </div>
-      </aside>
+    <div
+      className={`dashboard-shell${collapsed ? " is-sidebar-collapsed" : ""}`}
+      style={{ "--sidebar-width": sidebarWidth }}
+    >
+      <Sidebar role={user?.role} />
       <div className="dashboard-main">
         <header className="dashboard-topbar">
-          <button
-            className="sidebar-menu"
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open navigation"
-          >
-            <Menu size={22} />
-          </button>
           <div className="topbar-context">
             <span>Patient portal</span>
             <span className="topbar-separator">/</span>
             <strong>Dashboard</strong>
           </div>
           <div className="topbar-actions">
-            <div className="notification-wrap">
+            <div className="notification-wrap" ref={notificationRef}>
               <button
                 className="icon-button notification-button"
                 type="button"
@@ -122,44 +112,80 @@ function DashboardLayout() {
                 aria-expanded={notificationsOpen}
               >
                 <Bell size={19} strokeWidth={1.8} />
-                <span className="notification-dot" />
+                {unreadCount > 0 && (
+                  <span className="notification-count">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </button>
               {notificationsOpen && (
                 <div className="popover notification-popover">
-                  <strong>Notifications</strong>
-                  <p>Your appointment on 14 May is confirmed.</p>
-                  <small>Just now</small>
+                  <div className="notification-popover-head">
+                    <strong>Notifications</strong>
+                    <Link
+                      to="/dashboard/notifications"
+                      onClick={() => setNotificationsOpen(false)}
+                    >
+                      View all
+                    </Link>
+                  </div>
+                  {notifications.length ? (
+                    notifications.map((notification) => (
+                      <button
+                        key={notification._id}
+                        type="button"
+                        className={`notification-popover-item${notification.isRead ? "" : " is-unread"}`}
+                        onClick={async () => {
+                          if (!notification.isRead)
+                            await markNotificationRead(notification._id);
+                          setNotificationsOpen(false);
+                          if (notification.appointment?._id)
+                            navigate(
+                              `/dashboard/appointments/${notification.appointment._id}`,
+                            );
+                        }}
+                      >
+                        <span>{notification.title}</span>
+                        <small>
+                          {notification.message} ·{" "}
+                          {relativeTime(notification.createdAt)}
+                        </small>
+                      </button>
+                    ))
+                  ) : (
+                    <p>No new notifications.</p>
+                  )}
                 </div>
               )}
             </div>
-            <div className="profile-wrap">
+            <div className="profile-wrap" ref={profileMenuRef}>
               <button
                 className="profile-trigger"
                 type="button"
                 onClick={() => setProfileOpen(!profileOpen)}
                 aria-expanded={profileOpen}
               >
-                <span className="avatar avatar-small">
-                  {profile?.initials || "AC"}
-                </span>
+                {headerProfile?.profilePicture ? (
+                  <img
+                    className="avatar avatar-small"
+                    src={headerProfile.profilePicture}
+                    alt=""
+                  />
+                ) : (
+                  <span className="avatar avatar-small">{headerInitials}</span>
+                )}
                 <span className="profile-trigger-name">
-                  {profile?.firstName || "Patient"}
+                  {headerProfile?.firstName || "Patient"}
                 </span>
                 <ChevronDown size={15} />
               </button>
               {profileOpen && (
                 <div className="popover profile-popover">
-                  <Link
-                    to="/dashboard#profile"
-                    onClick={() => setProfileOpen(false)}
-                  >
+                  <Link to="/profile" onClick={() => setProfileOpen(false)}>
                     <UserRound size={15} />
                     Profile
                   </Link>
-                  <Link
-                    to="/dashboard#profile"
-                    onClick={() => setProfileOpen(false)}
-                  >
+                  <Link to="/settings" onClick={() => setProfileOpen(false)}>
                     <UserRoundCog size={15} />
                     Settings
                   </Link>

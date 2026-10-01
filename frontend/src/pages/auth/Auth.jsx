@@ -1,5 +1,10 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import {
   authenticate,
@@ -18,10 +23,13 @@ import {
   HeartPulse,
   LoaderCircle,
 } from "lucide-react";
+import { useAuth } from "../../context/useAuth";
 
 function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { setUser } = useAuth();
   const currentMode = getAuthMode(window.location.pathname, searchParams);
   const [showPassword, setShowPassword] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState(null);
@@ -67,14 +75,15 @@ function Auth() {
       captchaToken: recaptchaToken,
     };
     if (currentMode === "signup") {
-      payload.firstname = formData.get("firstName");
-      payload.lastname = formData.get("lastName");
-      payload.confirmpassword = formData.get("confirmPassword");
+      payload.firstName = formData.get("firstName");
+      payload.lastName = formData.get("lastName");
+      payload.confirmPassword = formData.get("confirmPassword");
     }
     try {
-      await authenticate(currentMode, payload);
+      const response = await authenticate(currentMode, payload);
       if (currentMode === "login") {
-        navigate("/dashboard");
+        setUser(response.data?.user || null);
+        navigate(location.state?.from || "/dashboard", { replace: true });
         return;
       }
       setSubmitted(true);

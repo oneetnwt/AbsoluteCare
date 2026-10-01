@@ -1,7 +1,96 @@
-import { CalendarDays, Clock3 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarDays, Clock3, LoaderCircle } from "lucide-react";
 import StaffPageHeader from "../../../components/staff/StaffPageHeader";
+import {
+  getTherapistCalendarConnectUrl,
+  getTherapistCalendarStatus,
+  getTherapistProfile,
+  disconnectTherapistCalendar,
+  updateAvailability,
+} from "../../../services/api/therapistApi";
+import { showError, showPromise } from "../../../utils/toast";
+
+const defaultHours = { start: "08:00", end: "17:00" };
 
 function AvailabilityPage() {
+  const [days, setDays] = useState([]);
+  const [hours, setHours] = useState(defaultHours);
+  const [savedAvailability, setSavedAvailability] = useState({
+    workingDays: [],
+    workingHours: defaultHours,
+  });
+  const [calendar, setCalendar] = useState({ connected: false, email: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const isDirty =
+    JSON.stringify({ workingDays: days, workingHours: hours }) !==
+    JSON.stringify(savedAvailability);
+  useEffect(() => {
+    Promise.all([getTherapistProfile(), getTherapistCalendarStatus()])
+      .then(([profile, status]) => {
+        const workingDays = profile.data.profile.workingDays || [];
+        const workingHours = profile.data.profile.workingHours || defaultHours;
+        setDays(workingDays);
+        setHours(workingHours);
+        setSavedAvailability({ workingDays, workingHours });
+        setCalendar(status.data);
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, []);
+  async function save() {
+    if (!hours.start || !hours.end || hours.start >= hours.end) {
+      showError("Choose an end time after the start time.");
+      return;
+    }
+
+    setSaving(true);
+    const request = updateAvailability({
+      workingDays: days,
+      workingHours: hours,
+    });
+    showPromise(request, {
+      loading: "Saving availability...",
+      success: "Availability updated.",
+      error: "Couldn't save availability.",
+    });
+    try {
+      const response = await request;
+      const savedProfile = response.data?.profile;
+      if (savedProfile) {
+        const workingDays = savedProfile.workingDays || [];
+        const workingHours = savedProfile.workingHours || hours;
+        setDays(workingDays);
+        setHours(workingHours);
+        setSavedAvailability({ workingDays, workingHours });
+      } else {
+        setSavedAvailability({ workingDays: days, workingHours: hours });
+      }
+    } catch {
+      return;
+    } finally {
+      setSaving(false);
+    }
+  }
+  function discardChanges() {
+    setDays(savedAvailability.workingDays);
+    setHours(savedAvailability.workingHours);
+  }
+  async function disconnectCalendar() {
+    const request = disconnectTherapistCalendar();
+    showPromise(request, {
+      loading: "Disconnecting Google Calendar...",
+      success: "Google Calendar disconnected.",
+      error: "Couldn't disconnect Google Calendar.",
+    });
+    try {
+      await request;
+      setCalendar({ connected: false, email: "" });
+    } catch {
+      return;
+    }
+  }
+  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   return (
     <main className="staff-dashboard-content">
       <section className="staff-dashboard-section staff-standalone-page">
@@ -10,24 +99,135 @@ function AvailabilityPage() {
           title="My availability"
           description="Set working days and hours for your schedule."
           action={
-            <button className="staff-section-primary" type="button">
-              Save availability
-            </button>
+            <div className="availability-header-actions">
+              {isDirty && (
+                <button
+                  className="availability-cancel-button"
+                  type="button"
+                  onClick={discardChanges}
+                  disabled={saving}
+                >
+                  Discard changes
+                </button>
+              )}
+              <button
+                className="staff-section-primary"
+                type="button"
+                onClick={save}
+                disabled={!isDirty || saving || loading}
+              >
+                {saving ? (
+                  <>
+                    <LoaderCircle
+                      className="staff-spinner"
+                      size={15}
+                      aria-hidden="true"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  "Save availability"
+                )}
+              </button>
+            </div>
           }
         />
         <div className="availability-panel">
-          <div className="availability-placeholder">
-            <Clock3 size={20} />
-            <strong>Working days and hours</strong>
-            <span>Availability settings will appear here once configured.</span>
+          <div className="availability-card">
+            <div className="availability-card-heading">
+              <span className="availability-card-icon">
+                <Clock3 size={18} />
+              </span>
+              <div>
+                <h2>Working days</h2>
+                <p>
+                  Select the days and hours when you can receive appointments.
+                </p>
+              </div>
+            </div>
+            <div className="weekday-list">
+              {weekdays.map((day) => (
+                <button
+                  className={days.includes(day) ? "is-selected" : ""}
+                  type="button"
+                  key={day}
+                  onClick={() =>
+                    setDays((current) =>
+                      current.includes(day)
+                        ? current.filter((item) => item !== day)
+                        : [...current, day],
+                    )
+                  }
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+            <p className="availability-helper">
+              Selected days determine when the admin can assign you
+              appointments.
+            </p>
+            <p className="availability-hours-label">
+              Hours apply to all selected days.
+            </p>
+            <div className="availability-time-fields">
+              <label>
+                Starts
+                <input
+                  type="time"
+                  value={hours.start}
+                  onChange={(event) =>
+                    setHours({ ...hours, start: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Ends
+                <input
+                  type="time"
+                  value={hours.end}
+                  onChange={(event) =>
+                    setHours({ ...hours, end: event.target.value })
+                  }
+                />
+              </label>
+            </div>
           </div>
           <div className="calendar-sync">
-            <CalendarDays size={18} />
-            <span>
-              <strong>Google Calendar</strong>
-              <small>Not connected</small>
-            </span>
-            <button type="button">Connect</button>
+            <div className="availability-card-heading">
+              <span className="availability-card-icon">
+                <CalendarDays size={18} />
+              </span>
+              <div>
+                <h2>Google Calendar</h2>
+                <p>Keep confirmed appointments visible in your calendar.</p>
+              </div>
+            </div>
+            <div className="calendar-status">
+              <span
+                className={`calendar-status-dot${calendar.connected ? " is-connected" : ""}`}
+              />
+              <span>{calendar.connected ? "Connected" : "Not connected"}</span>
+            </div>
+            {calendar.connected && calendar.email && (
+              <p className="calendar-account">{calendar.email}</p>
+            )}
+            {calendar.connected ? (
+              <button
+                className="calendar-disconnect-button"
+                type="button"
+                onClick={disconnectCalendar}
+              >
+                Disconnect
+              </button>
+            ) : (
+              <a
+                className="calendar-connect-button"
+                href={getTherapistCalendarConnectUrl()}
+              >
+                Connect
+              </a>
+            )}
           </div>
         </div>
       </section>

@@ -24,5 +24,17 @@ export const GOOGLE_REDIRECT_URI = getEnv(
   "GOOGLE_REDIRECT_URI",
   "http://localhost:5000/auth/google/callback",
 );
+export const GOOGLE_CALENDAR_REDIRECT_URI = getEnv(
+  "GOOGLE_CALENDAR_REDIRECT_URI",
+  "http://localhost:5000/integrations/google-calendar/callback",
+);
+export const GOOGLE_CALENDAR_ENCRYPTION_KEY = getEnv(
+  "GOOGLE_CALENDAR_ENCRYPTION_KEY",
+  "absolutecare-calendar-development-key",
+);
+export const CLINIC_ADDRESS = getEnv(
+  "CLINIC_ADDRESS",
+  "AbsoluteCare Physical Therapy",
+);
 export const FRONTEND_URL = getEnv("FRONTEND_URL", "http://localhost:5173");
 export const JWT_SECRET = getEnv("JWT_SECRET", "absolutecare-secret-key");

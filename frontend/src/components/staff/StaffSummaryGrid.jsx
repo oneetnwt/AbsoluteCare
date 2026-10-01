@@ -4,7 +4,7 @@ import {
   Clock3,
   UsersRound,
 } from "lucide-react";
-import { DashboardCard } from "../dashboard/DashboardPrimitives";
+import { StatCard } from "../dashboard/DashboardPrimitives";
 
 const summaryIcons = [UsersRound, CalendarDays, Clock3, CircleDollarSign];
 
@@ -17,14 +17,15 @@ function StaffSummaryGrid({ summaries }) {
       {summaries.map(([label, value, reference], index) => {
         const Icon = summaryIcons[index % summaryIcons.length];
         return (
-          <DashboardCard className="staff-summary-card" key={label}>
-            <span className={`staff-summary-icon summary-tone-${index % 4}`}>
-              <Icon size={18} />
-            </span>
-            <span className="staff-summary-label">{label}</span>
-            <strong>{value}</strong>
-            <small>Requirement {reference}</small>
-          </DashboardCard>
+          <StatCard
+            action="View details"
+            caption={`Requirement ${reference}`}
+            className="staff-summary-card"
+            icon={<Icon size={17} strokeWidth={1.8} />}
+            key={label}
+            label={label}
+            value={value}
+          />
         );
       })}
     </section>

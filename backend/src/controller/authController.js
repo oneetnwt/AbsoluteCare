@@ -1,5 +1,9 @@
 import User from "../models/userModel.js";
-import { signupSchema, loginSchema } from "../schema/authSchema.js";
+import {
+  loginSchema,
+  profileUpdateSchema,
+  signupSchema,
+} from "../schema/authSchema.js";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
@@ -182,6 +186,15 @@ export async function completeGoogleSignup(req, res) {
     if (payload.purpose !== "google-signup") {
       return res.status(400).json({ message: "Invalid Google account setup." });
     }
+    const firstName = String(
+      req.body.firstName || payload.firstname || "",
+    ).trim();
+    const lastName = String(req.body.lastName || payload.lastname || "").trim();
+    if (!firstName || !lastName) {
+      return res
+        .status(400)
+        .json({ message: "First and last name are required." });
+    }
     const password = String(req.body.password || "");
     if (password.length < 8 || password !== req.body.confirmPassword) {
       return res.status(400).json({
@@ -209,12 +222,12 @@ export async function completeGoogleSignup(req, res) {
       await bcrypt.genSalt(10),
     );
     const user = await User.create({
-      firstname: payload.firstname,
-      lastname: payload.lastname,
+      firstname: firstName,
+      lastname: lastName,
       email: payload.email,
       password: hashedPassword,
       profilePicture: payload.profilePicture || "",
-      role: "user",
+      authProvider: "google",
     });
     return res
       .status(201)
@@ -250,11 +263,11 @@ export const signup = async (req, res) => {
     const hashPassword = await bcrypt.hash(body.password, salt);
 
     const newUser = new User({
-      firstname: body.firstname,
-      lastname: body.lastname,
+      firstname: body.firstName,
+      lastname: body.lastName,
       email: body.email.toLowerCase(),
       password: hashPassword,
-      role: body.role || "user",
+      authProvider: "local",
     });
 
     await newUser.save();
@@ -293,6 +306,19 @@ export const login = async (req, res) => {
       });
     }
 
+    if (user.removedAt) {
+      return res.status(403).json({
+        message: "This account no longer exists.",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        message:
+          "Your account has been deactivated. Contact the clinic administrator.",
+      });
+    }
+
     const isMatch = await bcrypt.compare(body.password, user.password);
     if (!isMatch) {
       return res.status(401).json({
@@ -320,6 +346,41 @@ export const login = async (req, res) => {
 };
 
 export const checkAuth = async (req, res) => {
-  const user = req.user;
-  res.status(200).json(user);
+  const user = await User.findById(req.user.userId);
+  if (!user) return res.status(401).json({ message: "Account not found." });
+  res.status(200).json({ user: user.omitPassword() });
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const body = profileUpdateSchema.parse(req.body);
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      {
+        firstname: body.firstName,
+        lastname: body.lastName,
+        phone: body.phone,
+        dateOfBirth: body.dateOfBirth,
+        address: body.address,
+        profilePicture: body.profilePicture,
+      },
+      { new: true, runValidators: true },
+    );
+
+    if (!user) return res.status(404).json({ message: "Account not found." });
+    return res.status(200).json({ user: user.omitPassword() });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        message: "Please correct the highlighted profile fields.",
+        errors: error.errors,
+      });
+    }
+    return res.status(500).json({ message: "Unable to update your profile." });
+  }
+};
+
+export const logout = (req, res) => {
+  res.clearCookie("session");
+  res.status(204).send();
 };

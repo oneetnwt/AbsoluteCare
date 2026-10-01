@@ -63,8 +63,8 @@ function GoogleAccountSetup() {
     try {
       await completeGoogleSignup({
         token,
-        firstname: formData.get("firstName"),
-        lastname: formData.get("lastName"),
+        firstName: formData.get("firstName"),
+        lastName: formData.get("lastName"),
         password,
         confirmPassword,
         captchaToken: recaptchaToken,

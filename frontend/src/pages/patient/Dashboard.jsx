@@ -4,33 +4,50 @@ import {
   CalendarCheck2,
   CalendarPlus,
   ChevronRight,
-  FileText,
-  MoveRight,
   Plus,
   RefreshCw,
   Stethoscope,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
-  DashboardCard,
   DashboardEmptyState,
+  StatCard,
   StatusBadge,
 } from "../../components/dashboard/DashboardPrimitives";
+import { DashboardSkeleton } from "../../components/dashboard/Skeleton";
+import { useDelayedLoading } from "../../hooks/useDelayedLoading";
+import {
+  appointmentDate,
+  appointmentTime,
+  therapistName,
+} from "../../utils/patientFormatters";
 
 function Dashboard() {
   const {
     profile,
-    appointments,
     sessionHistory,
-    dependents,
     upcomingAppointment,
     sessionsCompleted,
-    treatmentPlan,
+    pendingCount,
     loading,
     error,
     retry,
   } = useOutletContext();
+  const showSkeleton = useDelayedLoading(loading);
 
-  if (loading) return <DashboardState message="Loading your care dashboard…" />;
+  if (loading && showSkeleton) return <DashboardSkeleton />;
+  if (loading) {
+    return (
+      <main
+        className="dashboard-content dashboard-loading-region"
+        aria-busy="true"
+      >
+        <p className="sr-only" role="status">
+          Loading your dashboard
+        </p>
+      </main>
+    );
+  }
   if (error) return <DashboardState error={error} retry={retry} />;
 
   const firstName = profile?.firstName || "there";
@@ -49,150 +66,88 @@ function Dashboard() {
           <h1>Welcome back, {firstName}</h1>
           <p>Here is your care plan at a glance.</p>
         </div>
-        <a className="dashboard-primary-button" href="/signup">
+        <Link className="dashboard-primary-button" to="/dashboard/book">
           <CalendarPlus size={17} aria-hidden="true" />
           Book an appointment
-        </a>
+        </Link>
       </section>
 
       <section className="summary-grid" aria-label="Care summary">
-        <AppointmentSummary appointment={upcomingAppointment} />
-        <SummaryCard
+        <StatCard
+          icon={<CalendarCheck2 size={17} strokeWidth={1.8} />}
+          label="Upcoming appointment"
+          value={
+            upcomingAppointment
+              ? appointmentDate(upcomingAppointment)
+              : "No upcoming appointments"
+          }
+          caption={
+            upcomingAppointment
+              ? `${appointmentTime(upcomingAppointment)} · ${upcomingAppointment.service?.name || "Therapy session"}`
+              : "Book your next session"
+          }
+          action="View appointments"
+          href="/dashboard/appointments"
+        />
+        <StatCard
           icon={<Stethoscope size={18} />}
-          iconClass="icon-mint"
           label="Sessions completed"
           value={sessionsCompleted}
           caption="sessions recorded"
-          linkLabel="View history"
-          href="#history"
+          action="View history"
+          href="/dashboard/progress"
         />
-        <TreatmentSummary plan={treatmentPlan} />
-        <DashboardCard
-          as="a"
-          className="summary-card quick-action"
-          href="/signup"
-        >
-          <span className="quick-action-mark">
-            <Plus size={22} />
-          </span>
-          <strong>Book a new appointment</strong>
-          <span>Choose a service and find a time that works.</span>
-          <MoveRight size={20} />
-        </DashboardCard>
+        <StatCard
+          icon={<CalendarCheck2 size={17} strokeWidth={1.8} />}
+          label="Pending requests"
+          value={pendingCount}
+          caption="awaiting confirmation"
+          action="Review requests"
+          href="/dashboard/appointments"
+        />
+        <StatCard
+          icon={<Plus size={17} strokeWidth={1.8} />}
+          label="Next step"
+          value="Book a new appointment"
+          caption="Choose a service and find a time that works."
+          action="Start booking"
+          href="/dashboard/book"
+          variant="cta"
+        />
       </section>
 
-      <AppointmentsSection appointments={appointments} />
-      <div className="dashboard-lower-grid">
-        <HistorySection sessions={sessionHistory} />
-        <DependentsSection dependents={dependents} />
-      </div>
+      <ReminderBanner appointment={upcomingAppointment} />
+      <HistorySection sessions={sessionHistory.slice(0, 3)} />
     </main>
   );
 }
 
-function AppointmentSummary({ appointment }) {
+function ReminderBanner({ appointment }) {
   return (
-    <DashboardCard className="summary-card appointment-summary">
-      <div className="summary-card-head">
-        <span className="summary-icon">
-          <CalendarCheck2 size={18} />
-        </span>
-        <span className="summary-label">Upcoming appointment</span>
-      </div>
-      {appointment ? (
-        <>
-          <strong className="summary-date">{appointment.date}</strong>
-          <div className="summary-detail">{appointment.time}</div>
-          <div className="summary-service">
-            <span>{appointment.service}</span>
-            <small>{appointment.therapist}</small>
-          </div>
-          <div className="summary-actions">
-            <button type="button">Reschedule</button>
-            <button type="button">Cancel</button>
-          </div>
-        </>
-      ) : (
-        <EmptySummary
-          message="No upcoming appointments"
-          action="Book your next session"
-        />
-      )}
-    </DashboardCard>
-  );
-}
-
-function SummaryCard({
-  icon,
-  iconClass,
-  label,
-  value,
-  caption,
-  linkLabel,
-  href,
-}) {
-  return (
-    <DashboardCard className="summary-card stat-summary">
-      <span className={`summary-icon ${iconClass}`}>{icon}</span>
-      <span className="summary-label">{label}</span>
-      <strong className="stat-number">{value}</strong>
-      <span className="stat-caption">{caption}</span>
-      <a className="summary-link" href={href}>
-        {linkLabel} <ArrowUpRight size={14} />
-      </a>
-    </DashboardCard>
-  );
-}
-
-function TreatmentSummary({ plan }) {
-  return (
-    <DashboardCard className="summary-card plan-summary">
-      <span className="summary-icon icon-lilac">
-        <FileText size={18} />
+    <aside className="dashboard-reminder" aria-label="Care reminder">
+      <strong>
+        {appointment ? "Your next visit is coming up" : "Keep your care moving"}
+      </strong>
+      <span>
+        {appointment
+          ? `Review ${appointment.service?.name || "your appointment"} details before ${appointmentDate(appointment)}.`
+          : "Book an appointment when you are ready for your next session."}
       </span>
-      <span className="summary-label">Active treatment plan</span>
-      {plan ? (
-        <>
-          <strong className="plan-title">{plan.name}</strong>
-          <div className="plan-progress">
-            <span>
-              <b>Week {plan.week}</b> of {plan.totalWeeks}
-            </span>
-            <span>{plan.percent}%</span>
-          </div>
-          <div className="progress-track">
-            <span style={{ width: `${plan.percent}%` }} />
-          </div>
-          <a className="summary-link" href="#history">
-            View progress <ArrowUpRight size={14} />
-          </a>
-        </>
-      ) : (
-        <EmptySummary
-          message="No active plan yet"
-          action="Your plan will appear here"
-        />
-      )}
-    </DashboardCard>
+      <Link to={appointment ? "/dashboard/appointments" : "/dashboard/book"}>
+        {appointment ? "Review appointments" : "Book a visit"}
+        <ChevronRight size={15} />
+      </Link>
+    </aside>
   );
 }
 
-function EmptySummary({ message, action }) {
-  return (
-    <div className="summary-empty">
-      <strong>{message}</strong>
-      <span>{action}</span>
-    </div>
-  );
-}
-
-function AppointmentsSection({ appointments }) {
+export function AppointmentsSection({ appointments }) {
   return (
     <section className="dashboard-section" id="appointments">
       <SectionHeading eyebrow="Your schedule" title="Upcoming appointments">
-        <a className="subtle-action" href="/signup">
+        <Link className="subtle-action" to="/dashboard/book">
           Book appointment <ArrowUpRight size={14} />
-        </a>
+        </Link>
       </SectionHeading>
       {appointments.length ? (
         <div className="dashboard-table-wrap">
@@ -245,7 +200,7 @@ function AppointmentsSection({ appointments }) {
           title="No upcoming appointments"
           message="When you book a visit, your appointment details will appear here."
           action="Book your next session"
-          href="/signup"
+          href="/dashboard/book"
         />
       )}
       <div className="table-footnote">
@@ -264,7 +219,7 @@ function AppointmentsSection({ appointments }) {
   );
 }
 
-function HistorySection({ sessions }) {
+export function HistorySection({ sessions }) {
   return (
     <section className="dashboard-section history-section" id="history">
       <SectionHeading eyebrow="Keep track of your care" title="Recent activity">
@@ -279,16 +234,24 @@ function HistorySection({ sessions }) {
       {sessions.length ? (
         <div className="history-list">
           {sessions.map((session) => (
-            <article className="history-item" key={session.date}>
+            <article className="history-item" key={session._id || session.date}>
               <span className="history-marker">
                 <CalendarCheck2 size={14} />
               </span>
               <div>
-                <strong>{session.date}</strong>
+                <strong>{session.sessionDate || session.date}</strong>
                 <span>
-                  {session.service} <i /> {session.therapist}
+                  {session.service?.name ||
+                    session.service ||
+                    "Therapy session"}{" "}
+                  <i />{" "}
+                  {therapistName(session.therapist || session.therapistName)}
                 </span>
-                <p>{session.note}</p>
+                <p>
+                  {session.patientVisibleNotes ||
+                    session.note ||
+                    "Session completed."}
+                </p>
               </div>
             </article>
           ))}
@@ -304,7 +267,7 @@ function HistorySection({ sessions }) {
   );
 }
 
-function DependentsSection({ dependents }) {
+export function DependentsSection({ dependents }) {
   return (
     <section className="dashboard-section dependents-section" id="dependents">
       <SectionHeading eyebrow="For your family" title="My dependents">
@@ -349,7 +312,7 @@ function DependentsSection({ dependents }) {
   );
 }
 
-function SectionHeading({ eyebrow, title, children }) {
+export function SectionHeading({ eyebrow, title, children }) {
   return (
     <div className="section-title-row">
       <div>
@@ -361,7 +324,7 @@ function SectionHeading({ eyebrow, title, children }) {
   );
 }
 
-function EmptyPanel({ icon, title, message, action, href }) {
+export function EmptyPanel({ icon, title, message, action, href }) {
   return (
     <DashboardEmptyState
       icon={icon}

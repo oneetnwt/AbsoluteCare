@@ -1,16 +1,5 @@
-import StaffTablePage from "../../../components/staff/StaffTablePage";
+import AdminPeoplePage from "./AdminPeoplePage";
 
-function PatientsPage() {
-  return (
-    <StaffTablePage
-      eyebrow="Administration"
-      title="Patients"
-      description="View and manage patient records."
-      columns={["Patient", "Contact", "Active plan", "Status", "Actions"]}
-      emptyMessage="No patient records to display"
-      action="Add patient"
-      search
-    />
-  );
+export default function PatientsPage() {
+  return <AdminPeoplePage role="patient" />;
 }
-export default PatientsPage;

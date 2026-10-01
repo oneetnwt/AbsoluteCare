@@ -1,5 +1,10 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -11,6 +16,7 @@ import {
   LoaderCircle,
   ShieldCheck,
 } from "lucide-react";
+import { useAuth } from "../../context/useAuth";
 import RecaptchaField from "../../components/auth/RecaptchaField";
 import { getApiErrorMessage } from "../../services/api/authApi";
 import {
@@ -21,6 +27,8 @@ import {
 function StaffAuth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { setUser } = useAuth();
   const isForgotMode = searchParams.get("mode") === "forgot";
   const [showPassword, setShowPassword] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState(null);
@@ -61,7 +69,8 @@ function StaffAuth() {
         throw new Error("This account does not have staff portal access.");
       }
 
-      navigate(dashboardPath);
+      setUser(response.data.user);
+      navigate(location.state?.from || dashboardPath, { replace: true });
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
       setRecaptchaToken(null);

@@ -1,16 +1,5 @@
-import StaffTablePage from "../../../components/staff/StaffTablePage";
+import AdminPeoplePage from "./AdminPeoplePage";
 
-function TherapistsPage() {
-  return (
-    <StaffTablePage
-      eyebrow="Administration"
-      title="Therapists"
-      description="Manage specializations and working days or hours."
-      columns={["Therapist", "Specialization", "Working hours", "Actions"]}
-      emptyMessage="No therapists to display"
-      action="Add therapist"
-      search
-    />
-  );
+export default function TherapistsPage() {
+  return <AdminPeoplePage role="therapist" />;
 }
-export default TherapistsPage;
